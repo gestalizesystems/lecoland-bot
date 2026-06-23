@@ -30,17 +30,20 @@
       padding: 18px 14px; gap: 6px; overflow-y: auto;
     }
     .brand { display: flex; align-items: center; gap: 12px; padding: 6px 6px 16px; }
-    .logo-wrap {
-      width: 50px; height: 50px; border-radius: 14px; background: #fff; cursor: pointer;
-      position: relative; overflow: hidden; flex: 0 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,.12);
-      display: flex; align-items: center; justify-content: center;
+    .logo-wrap { width: 50px; height: 50px; cursor: pointer; position: relative; flex: 0 0 auto; }
+    .logo-inner {
+      width: 100%; height: 100%; border-radius: 14px; background: #fff; overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center;
     }
     .logo-wrap img { width: 100%; height: 100%; object-fit: cover; display: none; }
     .logo-ph { font-size: 26px; }
     .logo-edit {
-      position: absolute; bottom: 0; left: 0; right: 0; background: rgba(31,58,95,.85);
-      color: #fff; font-size: 10px; text-align: center; padding: 1px 0; line-height: 1.4;
+      position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--navy); color: #fff; font-size: 11px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--amarelo); box-shadow: 0 1px 3px rgba(0,0,0,.3);
     }
+    .logo-wrap:hover .logo-edit { background: var(--navy-escuro); }
     .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
     .brand-text strong { font-size: 16px; }
     .brand-text span { font-size: 12px; color: var(--navy); opacity: .7; }
@@ -119,10 +122,12 @@
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo-wrap" id="logoWrap" title="Clique para trocar a logo">
-          <img id="logoImg" alt="Logo da loja" />
-          <span class="logo-ph" id="logoPh">🐾</span>
-          <span class="logo-edit">trocar</span>
+        <div class="logo-wrap" id="logoWrap" title="Editar logo">
+          <div class="logo-inner">
+            <img id="logoImg" alt="Logo da loja" />
+            <span class="logo-ph" id="logoPh">🐾</span>
+          </div>
+          <span class="logo-edit" aria-hidden="true">✏️</span>
         </div>
         <div class="brand-text"><strong id="hNome">Lecoland</strong><span>Painel do Bot</span></div>
         <input type="file" id="logoInput" accept="image/*" hidden />
