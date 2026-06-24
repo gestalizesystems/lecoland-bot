@@ -31,7 +31,8 @@
       display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 70px; padding: 40px 48px 90px; }
 
     /* ===== Esquerda — marca ===== */
-    .marca { display: flex; align-items: center; gap: 18px; margin-bottom: 32px; }
+    .marca { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .robo { width: 84px; height: 84px; object-fit: contain; flex: 0 0 auto; mix-blend-mode: multiply; }
     .wordmark { line-height: 1.0; }
     .wordmark .g { font-size: 42px; font-weight: 800; color: var(--escuro); letter-spacing: -1px; display: block; }
     .wordmark .b { font-size: 42px; font-weight: 800; color: var(--azul); letter-spacing: -1px; display: block; }
@@ -49,8 +50,9 @@
     .seg small { font-size: 13px; color: var(--suave); }
 
     /* ===== Direita — card ===== */
-    .card { background: #fff; border-radius: 26px; padding: 44px 40px; box-shadow: 0 30px 70px rgba(37,99,235,.10);
-      border: 1px solid #eef2f9; }
+    .card { background: #fff; border-radius: 26px; padding: 44px 40px;
+      box-shadow: 0 24px 70px rgba(37,99,235,.13), 0 6px 22px rgba(15,23,42,.05); border: 1px solid #eef2f9; }
+    .col-dir { display: flex; flex-direction: column; }
     .escudo { width: 64px; height: 64px; border-radius: 50%; background: var(--azul-claro); color: var(--azul);
       margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; }
     .card h2 { text-align: center; margin: 0 0 6px; font-size: 26px; color: var(--escuro); font-weight: 700; }
@@ -83,8 +85,8 @@
     .btn-criar:hover { border-color: var(--azul); background: var(--azul-claro); }
     .aviso { text-align: center; color: var(--suave); font-size: 13px; margin-top: 18px; line-height: 1.55; }
     .erro { color: #dc2626; font-size: 13px; text-align: center; margin-top: 14px; min-height: 16px; font-weight: 600; }
-    .rodape { position: fixed; bottom: 18px; left: 0; width: 100%; text-align: center; color: var(--suave);
-      font-size: 13px; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .rodape { text-align: center; color: var(--suave); font-size: 13px; margin-top: 22px;
+      display: flex; align-items: center; justify-content: center; gap: 7px; }
 
     @media (max-width: 900px) {
       .esq { display: none; }
@@ -98,41 +100,27 @@
   <div class="deco deco-blob1"></div>
   <div class="deco deco-blob2"></div>
   <canvas class="deco deco-canvas" id="dotsCanvas"></canvas>
-  <svg class="deco deco-wave" width="560" height="260" viewBox="0 0 560 260" fill="none" preserveAspectRatio="none">
-    <path d="M0 120 C 130 80, 250 165, 560 95" stroke="#d7e3fb" stroke-width="2" fill="none"/>
-    <path d="M0 165 C 150 125, 280 205, 560 150" stroke="#e1ebfc" stroke-width="2" fill="none"/>
-    <path d="M0 210 C 170 178, 320 235, 560 205" stroke="#e9f0fd" stroke-width="2" fill="none"/>
+  <svg class="deco deco-wave" width="760" height="320" viewBox="0 0 760 320" fill="none" preserveAspectRatio="none">
+    <path d="M0 130 C 170 88, 340 178, 760 118" stroke="#dbe6fb" stroke-width="1.6"/>
+    <path d="M0 165 C 190 122, 360 212, 760 158" stroke="#e1ebfc" stroke-width="1.6"/>
+    <path d="M0 200 C 210 158, 400 245, 760 198" stroke="#e7effd" stroke-width="1.6"/>
+    <path d="M0 235 C 230 195, 440 272, 760 238" stroke="#ecf2fe" stroke-width="1.6"/>
+    <path d="M0 270 C 250 232, 480 298, 760 274" stroke="#f1f5fe" stroke-width="1.6"/>
   </svg>
-  <svg class="deco deco-contour" width="420" height="420" viewBox="0 0 420 420" fill="none">
-    <path d="M420 300 A 120 120 0 0 0 300 420" stroke="#e0e9f9" stroke-width="2"/>
-    <path d="M420 250 A 170 170 0 0 0 250 420" stroke="#e5edfa" stroke-width="2"/>
-    <path d="M420 200 A 220 220 0 0 0 200 420" stroke="#ebf1fc" stroke-width="2"/>
-    <path d="M420 150 A 270 270 0 0 0 150 420" stroke="#eff4fd" stroke-width="2"/>
+  <svg class="deco deco-contour" width="480" height="480" viewBox="0 0 480 480" fill="none">
+    <path d="M480 330 A 150 150 0 0 0 330 480" stroke="#dde7f9" stroke-width="1.6"/>
+    <path d="M480 290 A 190 190 0 0 0 290 480" stroke="#e2ecfb" stroke-width="1.6"/>
+    <path d="M480 250 A 230 230 0 0 0 250 480" stroke="#e7effc" stroke-width="1.6"/>
+    <path d="M480 210 A 270 270 0 0 0 210 480" stroke="#ebf2fd" stroke-width="1.6"/>
+    <path d="M480 170 A 310 310 0 0 0 170 480" stroke="#eff4fe" stroke-width="1.6"/>
+    <path d="M480 130 A 350 350 0 0 0 130 480" stroke="#f2f6fe" stroke-width="1.6"/>
   </svg>
 
   <div class="wrap">
     <!-- Esquerda -->
     <div class="esq">
       <div class="marca">
-        <svg width="78" height="78" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="rb" x1="16" y1="20" x2="64" y2="62" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#4d9bff"/><stop offset="1" stop-color="#2563eb"/>
-            </linearGradient>
-          </defs>
-          <g stroke="#60a5fa" stroke-width="3" stroke-linecap="round">
-            <line x1="60" y1="13" x2="66" y2="8"/>
-            <line x1="63" y1="20" x2="70" y2="17"/>
-            <line x1="56" y1="8" x2="59" y2="2"/>
-          </g>
-          <circle cx="33" cy="10" r="4" fill="#1e40af"/>
-          <line x1="33" y1="13" x2="33" y2="20" stroke="#1e40af" stroke-width="4" stroke-linecap="round"/>
-          <rect x="8" y="36" width="9" height="17" rx="4.5" fill="#1e40af"/>
-          <rect x="15" y="20" width="50" height="39" rx="15" fill="url(#rb)"/>
-          <path d="M25 57 L25 70 L41 56 Z" fill="url(#rb)"/>
-          <rect x="27" y="35" width="13" height="7.5" rx="3.75" fill="#fff"/>
-          <rect x="45" y="35" width="10" height="7.5" rx="3.75" fill="#fff"/>
-        </svg>
+        <img src="/robot.png" alt="Gestalize Bots" class="robo" />
         <div class="wordmark"><span class="g">Gestalize</span><span class="b">Bots</span></div>
       </div>
 
@@ -161,6 +149,7 @@
     </div>
 
     <!-- Direita -->
+    <div class="col-dir">
     <div class="card">
       <div class="escudo"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14-4-4 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 6z"/></svg></div>
       <h2>Bem-vindo de volta!</h2>
@@ -194,11 +183,12 @@
       </button>
       <p class="aviso">Recebeu um convite da Gestalize Bots?<br/>Clique acima para configurar sua senha.</p>
     </div>
-  </div>
 
-  <div class="rodape">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    © <span id="ano"></span> Gestalize Bots. Todos os direitos reservados.
+    <div class="rodape">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      © <span id="ano"></span> Gestalize Bots. Todos os direitos reservados.
+    </div>
+    </div>
   </div>
 
   <script>
