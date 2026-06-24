@@ -202,24 +202,30 @@
   </div>
 
   <script>
-    // ===== Pontinhos interativos (fogem do cursor) =====
+    // ===== Pontinhos interativos (fogem do cursor pela tela e voltam ao lugar) =====
     (function () {
       const canvas = document.getElementById("dotsCanvas");
       const ctx = canvas.getContext("2d");
-      const COR = "#c4d2ec", RAIO = 1.9, ALCANCE = 115, FORCA = 38;
+      const COR = "#c4d2ec", RAIO = 1.9;
+      const ALCANCE = 150;   // distância em que o cursor começa a empurrar
+      const FORCA = 6;       // intensidade do empurrão (quanto eles correm)
+      const MOLA = 0.012;    // força que puxa de volta à posição original
+      const ATRITO = 0.88;   // desaceleração (suaviza o movimento)
       let dots = [], mx = -9999, my = -9999;
 
       function grade(ox, oy, cols, rows, esp) {
         for (let c = 0; c < cols; c++)
-          for (let r = 0; r < rows; r++)
-            dots.push({ hx: ox + c * esp, hy: oy + r * esp, x: ox + c * esp, y: oy + r * esp });
+          for (let r = 0; r < rows; r++) {
+            const x = ox + c * esp, y = oy + r * esp;
+            dots.push({ hx: x, hy: y, x, y, vx: 0, vy: 0 });
+          }
       }
       function gerar() {
         dots = [];
         const W = innerWidth, H = innerHeight, e = 18;
-        grade(42, 40, 7, 5, e);            // canto superior esquerdo
-        grade(42, H - 150, 6, 5, e);       // canto inferior esquerdo
-        grade(W - 150, H - 150, 6, 5, e);  // canto inferior direito
+        grade(42, 40, 12, 9, e);                            // superior esquerdo
+        grade(42, H - 8 * e - 40, 11, 8, e);                // inferior esquerdo
+        grade(W - 11 * e - 40, H - 8 * e - 40, 11, 8, e);   // inferior direito
       }
       function dimensoes() {
         const dpr = window.devicePixelRatio || 1;
@@ -235,14 +241,17 @@
         ctx.clearRect(0, 0, innerWidth, innerHeight);
         ctx.fillStyle = COR;
         for (const d of dots) {
-          let ox = 0, oy = 0;
-          const dx = d.hx - mx, dy = d.hy - my, dist = Math.hypot(dx, dy);
-          if (dist < ALCANCE && dist > 0.01) {
+          // empurrão a partir da posição ATUAL (eles continuam fugindo enquanto o cursor chega perto)
+          const dx = d.x - mx, dy = d.y - my, dist = Math.hypot(dx, dy) || 0.01;
+          if (dist < ALCANCE) {
             const f = (1 - dist / ALCANCE) * FORCA;
-            ox = (dx / dist) * f; oy = (dy / dist) * f;
+            d.vx += (dx / dist) * f; d.vy += (dy / dist) * f;
           }
-          d.x += (d.hx + ox - d.x) * 0.18;
-          d.y += (d.hy + oy - d.y) * 0.18;
+          // mola de volta ao lugar de origem + atrito
+          d.vx += (d.hx - d.x) * MOLA;
+          d.vy += (d.hy - d.y) * MOLA;
+          d.vx *= ATRITO; d.vy *= ATRITO;
+          d.x += d.vx; d.y += d.vy;
           ctx.beginPath(); ctx.arc(d.x, d.y, RAIO, 0, Math.PI * 2); ctx.fill();
         }
         requestAnimationFrame(loop);
