@@ -115,6 +115,53 @@
     .switch { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
     code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
     .pill { display:inline-block; background:#eef2ff; color: var(--navy); padding:2px 7px; border-radius:6px; font-size:11px; font-weight:600; }
+    /* ===== Dashboard ===== */
+    .dash-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
+    .kpi { background: #fff; border: 1px solid var(--borda); border-radius: 14px; padding: 16px 18px; }
+    .kpi .top { display: flex; align-items: flex-start; justify-content: space-between; }
+    .kpi .rotulo { font-size: 13px; font-weight: 700; }
+    .kpi .ico { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex: 0 0 auto; }
+    .kpi .valor { font-size: 26px; font-weight: 800; color: var(--navy); margin: 8px 0 2px; }
+    .kpi .delta { font-size: 12px; font-weight: 700; }
+    .kpi .delta.up { color: #16a34a; } .kpi .delta.down { color: #dc2626; }
+    .kpi .vs { font-size: 11px; color: var(--suave); margin-left: 6px; }
+    .kpi svg.spark { display: block; width: 100%; height: 44px; margin-top: 6px; }
+    .dash-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .dash-2b { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; }
+    @media (max-width: 1000px) { .dash-kpis { grid-template-columns: repeat(2, 1fr); } .dash-2, .dash-2b { grid-template-columns: 1fr; } }
+    .bloco { background: #fff; border: 1px solid var(--borda); border-radius: 14px; padding: 18px; }
+    .bloco .cab { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .bloco .cab h3 { margin: 0; font-size: 15px; color: var(--navy); }
+    .rt { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+    .rt:last-child { border-bottom: none; }
+    .rt .av { width: 38px; height: 38px; border-radius: 50%; background: var(--amarelo); color: var(--navy); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: 0 0 auto; }
+    .rt .info { flex: 1; min-width: 0; }
+    .rt .nome { font-weight: 600; font-size: 14px; }
+    .rt .msg { font-size: 12.5px; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rt .dir { text-align: right; flex: 0 0 auto; }
+    .tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+    .tag.bot { background: #dcfce7; color: #166534; } .tag.aguard { background: #fef3c7; color: #92400e; } .tag.humano { background: #e0e7ff; color: #3730a3; }
+    .rt .tempo { font-size: 11px; color: var(--suave); margin-top: 4px; }
+    .sv { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f1f5f9; }
+    .sv:last-child { border-bottom: none; }
+    .sv .num { width: 30px; height: 30px; border-radius: 9px; background: #eef2ff; color: var(--navy); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex: 0 0 auto; }
+    .sv .info { flex: 1; } .sv .tit { font-weight: 600; font-size: 14px; } .sv .sub { font-size: 12px; color: var(--suave); }
+    .sv .pct { font-size: 12px; font-weight: 700; }
+    .status-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; }
+    .status-item:last-child { border-bottom: none; }
+    .est { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .est.ativo { color: #16a34a; } .est.reparo { color: #dc2626; }
+    .est .pt { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .status-topo .cir { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex: 0 0 auto; }
+    .leg { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: #475569; }
+    .leg span { display: flex; align-items: center; gap: 7px; }
+    .leg .pt { width: 11px; height: 11px; border-radius: 50%; }
+    select.filtro { padding: 7px 10px; border: 1px solid var(--borda); border-radius: 9px; font-size: 13px; font-family: inherit; background: #fff; cursor: pointer; }
+    .btn-data { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--borda); border-radius: 9px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--texto); }
+    .data-pop { position: absolute; top: 70px; right: 26px; background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.14); z-index: 20; display: none; width: 230px; }
+    .data-pop label { margin-top: 8px; }
+    .dash-aviso { font-size: 12px; color: var(--suave); background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 9px 12px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -134,7 +181,8 @@
       </div>
 
       <nav class="nav" id="nav">
-        <a class="nav-item active" data-target="page-negocio" data-titulo="Dados do negócio" data-sub="Informações que aparecem nas respostas do bot."><span class="ic">🏪</span> Dados do negócio</a>
+        <a class="nav-item active" data-target="page-dashboard" data-titulo="Dashboard" data-sub="Resumo do seu atendimento automatizado."><span class="ic">📊</span> Dashboard</a>
+        <a class="nav-item" data-target="page-negocio" data-titulo="Dados do negócio" data-sub="Informações que aparecem nas respostas do bot."><span class="ic">🏪</span> Dados do negócio</a>
         <a class="nav-item" data-target="page-mensagens" data-titulo="Mensagens" data-sub="Personalize as mensagens que o bot envia."><span class="ic">💬</span> Mensagens</a>
         <a class="nav-item" data-target="page-opcoes" data-titulo="Opções do Menu" data-sub="Itens numerados do menu (banho, veterinário, vacina...)."><span class="ic">🔢</span> Opções do Menu</a>
         <a class="nav-item" data-target="page-faq" data-titulo="Respostas Rápidas (FAQ)" data-sub="Respostas para dúvidas comuns dos clientes."><span class="ic">❓</span> Respostas Rápidas</a>
@@ -158,12 +206,55 @@
         </div>
         <div class="topbar-actions">
           <span id="status"></span>
+          <button class="btn-data" id="btnData" onclick="toggleData()" style="display:none">📅 <span id="dataLabel">Período</span></button>
+          <div class="data-pop" id="dataPop">
+            <label>Data início</label><input type="date" id="dataIni" />
+            <label>Data fim</label><input type="date" id="dataFim" />
+            <div style="margin-top:12px;"><button class="btn-primary" style="width:100%" onclick="aplicarData()">Aplicar</button></div>
+          </div>
           <button class="btn-primary" id="btnSalvar" onclick="salvar()">💾 Salvar tudo</button>
         </div>
       </header>
 
       <main class="content">
-        <section class="card page ativa" id="page-negocio">
+        <div class="page ativa" id="page-dashboard">
+          <div class="dash-aviso">ℹ️ Os números abaixo são <b>demonstrativos</b> por enquanto. Os <b>serviços</b> e o <b>status</b> são reais; os totais e gráficos passam a ser reais quando o bot estiver conectado ao WhatsApp e registrando métricas.</div>
+          <div class="dash-kpis" id="dashKpis"></div>
+          <div class="dash-2">
+            <div class="bloco">
+              <div class="cab"><h3>⚡ Atendimentos em tempo real</h3></div>
+              <div id="dashTempoReal"></div>
+            </div>
+            <div class="bloco">
+              <div class="cab"><h3>⭐ Serviços mais procurados</h3></div>
+              <div id="dashServicos"></div>
+            </div>
+          </div>
+          <div class="dash-2b">
+            <div class="bloco">
+              <div class="cab">
+                <h3>📈 Desempenho do atendimento</h3>
+                <select class="filtro" id="dashFiltro" onchange="renderGrafico()">
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="14">Últimos 14 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                </select>
+              </div>
+              <div class="leg">
+                <span><span class="pt" style="background:#16a34a"></span> Mensagens recebidas</span>
+                <span><span class="pt" style="background:#2563eb"></span> Respostas automáticas</span>
+                <span><span class="pt" style="background:#7c3aed"></span> Transferidas p/ humano</span>
+              </div>
+              <div id="dashGrafico"></div>
+            </div>
+            <div class="bloco">
+              <div class="cab"><h3>🟢 Status da automação</h3></div>
+              <div id="dashStatus"></div>
+            </div>
+          </div>
+        </div>
+
+        <section class="card page" id="page-negocio">
           <h2>🏪 Dados do negócio</h2>
           <p class="dica">Esses dados aparecem nas respostas. Você pode usar variáveis em qualquer texto:
             <span class="pill">{nome}</span> <span class="pill">{telefone}</span> <span class="pill">{endereco}</span>
@@ -322,7 +413,15 @@
     function mostrarPagina(id, navEl) {
       document.querySelectorAll(".page").forEach(p => p.classList.toggle("ativa", p.id === id));
       document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.target === id));
-      if (navEl) {
+      const ehDash = id === "page-dashboard";
+      el("btnSalvar").style.display = ehDash ? "none" : "";
+      el("btnData").style.display = ehDash ? "flex" : "none";
+      if (el("dataPop")) el("dataPop").style.display = "none";
+      if (ehDash) {
+        const nome = (cfg && cfg.negocio && cfg.negocio.nome) || "Lecoland";
+        el("topTitulo").textContent = `Olá, ${nome}! 👋`;
+        el("topSub").textContent = "Aqui está o resumo do seu atendimento automatizado.";
+      } else if (navEl) {
         el("topTitulo").textContent = navEl.dataset.titulo || "Configurações do Bot";
         el("topSub").textContent = navEl.dataset.sub || "";
       }
@@ -494,7 +593,119 @@
       window.location.href = "/login";
     }
 
-    carregar();
+    // ===== Dashboard =====
+    function serieDemo(n, base, amp, seed) {
+      const out = []; let v = base, s = (seed || 1) * 7919;
+      for (let i = 0; i < n; i++) { s = (s * 9301 + 49297) % 233280; const r = s / 233280; v += (r - 0.45) * amp; v = Math.max(base * 0.5, v); out.push(Math.round(v)); }
+      return out;
+    }
+    function svgSpark(serie, cor) {
+      const w = 260, h = 44, n = serie.length, min = Math.min(...serie), max = Math.max(...serie), rng = (max - min) || 1;
+      const X = (i) => (i / (n - 1)) * w, Y = (v) => h - 4 - ((v - min) / rng) * (h - 8);
+      let d = ""; serie.forEach((v, i) => { d += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1) + " "; });
+      const id = "g" + Math.random().toString(36).slice(2, 7);
+      return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cor}" stop-opacity="0.22"/><stop offset="1" stop-color="${cor}" stop-opacity="0"/></linearGradient></defs>
+        <path d="${d}L${w} ${h} L0 ${h} Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+    function renderKpis() {
+      const cards = [
+        { rot: "Atendimentos", cor: "#16a34a", bg: "#dcfce7", ico: "💬", v: "1.248", d: "↑ 18%", up: true },
+        { rot: "Mensagens enviadas", cor: "#2563eb", bg: "#dbeafe", ico: "✈️", v: "7.982", d: "↑ 24%", up: true },
+        { rot: "Respostas automáticas", cor: "#ea580c", bg: "#ffedd5", ico: "🤖", v: "96%", d: "↑ 8%", up: true },
+        { rot: "Transferências p/ humano", cor: "#7c3aed", bg: "#ede9fe", ico: "🎧", v: "53", d: "↓ 12%", up: false },
+      ];
+      el("dashKpis").innerHTML = cards.map((c, i) => `
+        <div class="kpi">
+          <div class="top"><div class="rotulo" style="color:${c.cor}">${c.rot}</div><div class="ico" style="background:${c.bg}">${c.ico}</div></div>
+          <div class="valor">${c.v} <span class="delta ${c.up ? "up" : "down"}">${c.d}</span></div>
+          <div class="vs">vs período anterior</div>
+          ${svgSpark(serieDemo(24, 40, 18, i + 3), c.cor)}
+        </div>`).join("");
+    }
+    function renderTempoReal() {
+      const dados = [
+        { nome: "Lucas Ferreira", msg: "Gostaria de saber sobre banho e tosa", tag: "bot", t: "agora" },
+        { nome: "Juliana Santos", msg: "Qual o valor da consulta?", tag: "aguard", t: "1 min" },
+        { nome: "Rafael Costa", msg: "Quero agendar uma vacinação", tag: "bot", t: "2 min" },
+        { nome: "Mariana Oliveira", msg: "Vocês fazem entrega?", tag: "humano", t: "3 min" },
+        { nome: "Pedro Almeida", msg: "Qual o horário de funcionamento?", tag: "bot", t: "5 min" },
+      ];
+      const rot = { bot: "Atendido pelo bot", aguard: "Aguardando resposta", humano: "Transferido p/ humano" };
+      el("dashTempoReal").innerHTML = dados.map(d => `
+        <div class="rt"><div class="av">${d.nome[0]}</div>
+          <div class="info"><div class="nome">${d.nome}</div><div class="msg">${d.msg}</div></div>
+          <div class="dir"><span class="tag ${d.tag}">${rot[d.tag]}</span><div class="tempo">${d.t}</div></div></div>`).join("");
+    }
+    function renderServicos() {
+      const opcoes = [];
+      (cfg.servicos || []).forEach(s => opcoes.push(s.titulo));
+      (cfg.faqRapido || []).forEach(f => opcoes.push(f.titulo));
+      if (cfg.entrega && cfg.entrega.ativo) opcoes.push(cfg.entrega.titulo);
+      const base = [532, 398, 286, 152, 98, 64, 40], pct = ["↑ 15%", "↑ 8%", "↑ 22%", "↓ 5%", "↑ 12%", "↑ 4%", "↑ 2%"];
+      el("dashServicos").innerHTML = opcoes.slice(0, 5).map((t, i) => `
+        <div class="sv"><div class="num">${i + 1}</div>
+          <div class="info"><div class="tit">${esc(t)}</div><div class="sub">${base[i] || 30} solicitações</div></div>
+          <div class="pct" style="color:${(pct[i] || "").includes("↓") ? "#dc2626" : "#16a34a"}">${pct[i] || "↑ 3%"}</div></div>`).join("");
+    }
+    async function renderStatus() {
+      let st = { gemini: false, ors: false };
+      try { st = await (await fetch("/api/status")).json(); } catch (_) {}
+      const entregaAtiva = cfg.entrega && cfg.entrega.ativo;
+      const itens = [
+        { nome: "Respostas com IA (Gemini)", ok: st.gemini },
+        { nome: "Menu inteligente", ok: true },
+        { nome: "Cálculo de entrega por endereço", ok: !!(entregaAtiva && st.ors) },
+      ];
+      const tudoOk = itens.every(i => i.ok);
+      el("dashStatus").innerHTML = `
+        <div class="status-topo">
+          <div class="cir" style="background:${tudoOk ? "#dcfce7" : "#fee2e2"};color:${tudoOk ? "#16a34a" : "#dc2626"}">${tudoOk ? "✓" : "!"}</div>
+          <div><div style="font-weight:700;color:var(--navy)">${tudoOk ? "Tudo funcionando" : "Atenção necessária"}</div>
+          <div style="font-size:13px;color:var(--suave)">${tudoOk ? "Sua automação está ativa e funcionando corretamente." : "Algum item precisa de configuração."}</div></div>
+        </div>` +
+        itens.map(i => `<div class="status-item">${i.nome}<span class="est ${i.ok ? "ativo" : "reparo"}"><span class="pt"></span>${i.ok ? "Ativo" : "Aguardando reparo"}</span></div>`).join("");
+    }
+    function renderGrafico() {
+      const dias = parseInt((el("dashFiltro") && el("dashFiltro").value) || "7", 10);
+      const recebidas = serieDemo(dias, 480, 90, 7);
+      const automaticas = recebidas.map(v => Math.round(v * 0.82));
+      const transferidas = recebidas.map(v => Math.round(v * 0.14));
+      const max = Math.max(...recebidas) * 1.15;
+      const w = 720, h = 250, padL = 36, padB = 26, padT = 8, padR = 8, iw = w - padL - padR, ih = h - padT - padB;
+      const X = (i) => padL + (i / (dias - 1 || 1)) * iw, Y = (v) => padT + ih - (v / max) * ih;
+      const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(" ");
+      let grid = "";
+      for (let g = 0; g <= 4; g++) { const yy = padT + ih - (g / 4) * ih, val = Math.round((g / 4) * max); grid += `<line x1="${padL}" y1="${yy.toFixed(0)}" x2="${w - padR}" y2="${yy.toFixed(0)}" stroke="#f1f5f9"/><text x="${padL - 6}" y="${(yy + 3).toFixed(0)}" text-anchor="end" font-size="10" fill="#94a3b8">${val}</text>`; }
+      const fimDt = window.__dashFim ? new Date(window.__dashFim + "T00:00:00") : new Date();
+      let xl = "", passo = Math.ceil(dias / 7);
+      for (let i = 0; i < dias; i += passo) { const dt = new Date(fimDt); dt.setDate(dt.getDate() - (dias - 1 - i)); const lbl = String(dt.getDate()).padStart(2, "0") + "/" + String(dt.getMonth() + 1).padStart(2, "0"); xl += `<text x="${X(i).toFixed(0)}" y="${h - 6}" text-anchor="middle" font-size="10" fill="#94a3b8">${lbl}</text>`; }
+      el("dashGrafico").innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:260px">${grid}
+        <path d="${path(recebidas)} L${X(dias - 1).toFixed(1)} ${padT + ih} L${padL} ${padT + ih} Z" fill="rgba(22,163,74,.07)"/>
+        <path d="${path(recebidas)}" fill="none" stroke="#16a34a" stroke-width="2.2"/>
+        <path d="${path(automaticas)}" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+        <path d="${path(transferidas)}" fill="none" stroke="#7c3aed" stroke-width="2.2"/>${xl}</svg>`;
+    }
+    function renderDashboard() { if (!cfg) return; renderKpis(); renderTempoReal(); renderServicos(); renderStatus(); renderGrafico(); }
+    function toggleData() { const p = el("dataPop"); p.style.display = p.style.display === "block" ? "none" : "block"; }
+    function fmtData(s) { const p = s.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+    function aplicarData() {
+      const ini = el("dataIni").value, fim = el("dataFim").value;
+      if (ini && fim) { window.__dashFim = fim; el("dataLabel").textContent = fmtData(ini) + " - " + fmtData(fim); renderGrafico(); }
+      el("dataPop").style.display = "none";
+    }
+    function initDashData() {
+      const iso = (d) => d.toISOString().slice(0, 10);
+      const fim = new Date(), ini = new Date(); ini.setDate(ini.getDate() - 29);
+      el("dataIni").value = iso(ini); el("dataFim").value = iso(fim); window.__dashFim = iso(fim);
+      el("dataLabel").textContent = fmtData(iso(ini)) + " - " + fmtData(iso(fim));
+    }
+
+    carregar().then(() => {
+      initDashData();
+      mostrarPagina("page-dashboard", document.querySelector('.nav-item[data-target="page-dashboard"]'));
+      renderDashboard();
+    });
     carregarConta();
   </script>
 </body>
