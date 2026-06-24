@@ -140,6 +140,7 @@
         <a class="nav-item" data-target="page-faq" data-titulo="Respostas Rápidas (FAQ)" data-sub="Respostas para dúvidas comuns dos clientes."><span class="ic">❓</span> Respostas Rápidas</a>
         <a class="nav-item" data-target="page-entrega" data-titulo="Taxas e Serviços" data-sub="Entrega e Táxi Dog, com cálculo por distância."><span class="ic">🛵</span> Taxas e Serviços</a>
         <a class="nav-item" data-target="page-gatilhos" data-titulo="Palavras-chave gerais" data-sub="Atalhos para o bot entender comandos importantes."><span class="ic">⚙️</span> Palavras-chave</a>
+        <a class="nav-item" data-target="page-conta" data-titulo="Configurações da conta" data-sub="Gerencie seus dados de acesso ao painel."><span class="ic">👤</span> Configurações da conta</a>
       </nav>
 
       <div class="side-foot">
@@ -236,6 +237,30 @@
           <p class="dica">Atalhos para o bot entender comandos importantes.</p>
           <label>Pedir atendente humano (vírgula)</label><input type="text" id="g_atendente" />
           <label>Abrir o menu / saudação (vírgula)</label><input type="text" id="g_saudacao" />
+        </section>
+
+        <section class="card page" id="page-conta">
+          <h2>👤 Configurações da conta</h2>
+          <p class="dica">Dados de acesso ao painel. A senha nunca é exibida.</p>
+          <div class="grid-2">
+            <div><label>Nome de usuário</label><input type="text" id="ct_nomeUsuario" /></div>
+            <div><label>Telefone</label><input type="text" id="ct_telefone" /></div>
+            <div><label>E-mail (login)</label><input type="text" id="ct_email" /></div>
+            <div><label>Senha</label><input type="text" value="••••••••" disabled /></div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+            <button class="btn-primary" onclick="salvarConta()">💾 Salvar dados da conta</button>
+            <button class="add" onclick="toggleSenha()">🔑 Alterar senha</button>
+            <button class="add" style="border-color:var(--vermelho); color:var(--vermelho);" onclick="sair()">↩ Sair</button>
+          </div>
+          <div id="formSenha" style="display:none; margin-top:18px; border-top:1px solid var(--borda); padding-top:16px; max-width:440px;">
+            <h3 style="margin:0 0 8px; font-size:14px; color:var(--navy);">Alterar senha</h3>
+            <label>Senha atual</label><input type="password" id="s_atual" />
+            <label>Nova senha</label><input type="password" id="s_nova" />
+            <label>Confirmar nova senha</label><input type="password" id="s_conf" />
+            <div style="margin-top:12px;"><button class="btn-primary" onclick="trocarSenha()">Salvar nova senha</button></div>
+            <div id="msgSenha" style="margin-top:10px; font-size:13px; font-weight:600;"></div>
+          </div>
         </section>
       </main>
 
@@ -434,7 +459,43 @@
       finally { btn.disabled = false; }
     }
 
+    // ===== Conta =====
+    async function carregarConta() {
+      try {
+        const c = await (await fetch("/api/conta")).json();
+        el("ct_nomeUsuario").value = c.nomeUsuario || "";
+        el("ct_telefone").value = c.telefone || "";
+        el("ct_email").value = c.email || "";
+      } catch (_) {}
+    }
+    async function salvarConta() {
+      const body = {
+        nomeUsuario: el("ct_nomeUsuario").value.trim(),
+        telefone: el("ct_telefone").value.trim(),
+        email: el("ct_email").value.trim(),
+      };
+      try {
+        const j = await (await fetch("/api/conta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+        flash(j.ok ? "✅ Dados da conta salvos." : "❌ " + (j.erro || "Erro"), j.ok ? "ok" : "erro");
+      } catch (e) { flash("❌ " + e.message, "erro"); }
+    }
+    function toggleSenha() { const f = el("formSenha"); f.style.display = f.style.display === "none" ? "block" : "none"; }
+    async function trocarSenha() {
+      const atual = el("s_atual").value, nova = el("s_nova").value, conf = el("s_conf").value, msg = el("msgSenha");
+      if (nova !== conf) { msg.textContent = "As senhas novas não conferem."; msg.style.color = "#dc2626"; return; }
+      try {
+        const j = await (await fetch("/api/conta/senha", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ atual, nova }) })).json();
+        if (j.ok) { msg.textContent = "✅ Senha alterada com sucesso!"; msg.style.color = "#1a7f37"; el("s_atual").value = el("s_nova").value = el("s_conf").value = ""; }
+        else { msg.textContent = "❌ " + (j.erro || "Erro"); msg.style.color = "#dc2626"; }
+      } catch (e) { msg.textContent = "❌ " + e.message; msg.style.color = "#dc2626"; }
+    }
+    async function sair() {
+      try { await fetch("/api/logout", { method: "POST" }); } catch (_) {}
+      window.location.href = "/login";
+    }
+
     carregar();
+    carregarConta();
   </script>
 </body>
 </html>
