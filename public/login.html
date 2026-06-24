@@ -18,8 +18,7 @@
 
     /* ===== Decorações de fundo ===== */
     .deco { position: fixed; pointer-events: none; z-index: 0; }
-    .deco-dots { top: 40px; left: 42px; width: 130px; height: 96px;
-      background-image: radial-gradient(#c4d2ec 1.7px, transparent 1.8px); background-size: 18px 18px; opacity: .8; }
+    .deco-canvas { top: 0; left: 0; width: 100%; height: 100%; }
     .deco-blob1 { top: -120px; left: -120px; width: 420px; height: 420px; border-radius: 50%;
       background: radial-gradient(circle at 50% 50%, rgba(79,140,246,.10), transparent 70%); }
     .deco-blob2 { top: -80px; right: -80px; width: 360px; height: 360px; border-radius: 50%;
@@ -90,7 +89,7 @@
     @media (max-width: 900px) {
       .esq { display: none; }
       .wrap { grid-template-columns: 1fr; max-width: 460px; }
-      .deco-dots, .deco-wave, .deco-contour { display: none; }
+      .deco-canvas, .deco-wave, .deco-contour { display: none; }
     }
   </style>
 </head>
@@ -98,7 +97,7 @@
   <!-- Decorações -->
   <div class="deco deco-blob1"></div>
   <div class="deco deco-blob2"></div>
-  <div class="deco deco-dots"></div>
+  <canvas class="deco deco-canvas" id="dotsCanvas"></canvas>
   <svg class="deco deco-wave" width="560" height="260" viewBox="0 0 560 260" fill="none" preserveAspectRatio="none">
     <path d="M0 120 C 130 80, 250 165, 560 95" stroke="#d7e3fb" stroke-width="2" fill="none"/>
     <path d="M0 165 C 150 125, 280 205, 560 150" stroke="#e1ebfc" stroke-width="2" fill="none"/>
@@ -203,6 +202,54 @@
   </div>
 
   <script>
+    // ===== Pontinhos interativos (fogem do cursor) =====
+    (function () {
+      const canvas = document.getElementById("dotsCanvas");
+      const ctx = canvas.getContext("2d");
+      const COR = "#c4d2ec", RAIO = 1.9, ALCANCE = 115, FORCA = 38;
+      let dots = [], mx = -9999, my = -9999;
+
+      function grade(ox, oy, cols, rows, esp) {
+        for (let c = 0; c < cols; c++)
+          for (let r = 0; r < rows; r++)
+            dots.push({ hx: ox + c * esp, hy: oy + r * esp, x: ox + c * esp, y: oy + r * esp });
+      }
+      function gerar() {
+        dots = [];
+        const W = innerWidth, H = innerHeight, e = 18;
+        grade(42, 40, 7, 5, e);            // canto superior esquerdo
+        grade(42, H - 150, 6, 5, e);       // canto inferior esquerdo
+        grade(W - 150, H - 150, 6, 5, e);  // canto inferior direito
+      }
+      function dimensoes() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        gerar();
+      }
+      addEventListener("resize", dimensoes);
+      addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; });
+      addEventListener("mouseout", () => { mx = -9999; my = -9999; });
+
+      function loop() {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        ctx.fillStyle = COR;
+        for (const d of dots) {
+          let ox = 0, oy = 0;
+          const dx = d.hx - mx, dy = d.hy - my, dist = Math.hypot(dx, dy);
+          if (dist < ALCANCE && dist > 0.01) {
+            const f = (1 - dist / ALCANCE) * FORCA;
+            ox = (dx / dist) * f; oy = (dy / dist) * f;
+          }
+          d.x += (d.hx + ox - d.x) * 0.18;
+          d.y += (d.hy + oy - d.y) * 0.18;
+          ctx.beginPath(); ctx.arc(d.x, d.y, RAIO, 0, Math.PI * 2); ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      dimensoes(); loop();
+    })();
+
     const $ = (id) => document.getElementById(id);
     $("ano").textContent = new Date().getFullYear();
 
