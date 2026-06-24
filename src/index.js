@@ -23,6 +23,7 @@ if (!process.env.GEMINI_API_KEY) {
 // Em memória mesmo (some ao reiniciar o processo).
 const pausados = new Map(); // contactId -> { timer, ultimaMsg }
 const aguardandoFecho = new Map(); // contactId -> { timer } (após o "posso ajudar em algo mais?")
+const menuContexto = new Map(); // contactId -> opções do menu atual (p/ resolver o número escolhido)
 
 const PAUSA_SILENCIO_MS = 60 * 60 * 1000; // handoff → "posso ajudar?" após 1h de silêncio do cliente
 const SEM_RESPOSTA_MS = 2 * 60 * 60 * 1000; // sem resposta ao "posso ajudar?" em 2h → finaliza
@@ -68,6 +69,7 @@ async function finalizar(contactId, enviarDespedida) {
   const f = aguardandoFecho.get(contactId);
   if (f && f.timer) clearTimeout(f.timer);
   aguardandoFecho.delete(contactId);
+  menuContexto.delete(contactId);
   limparHistorico(contactId);
   if (enviarDespedida) {
     try {
@@ -123,7 +125,12 @@ client.on("message", async (msg) => {
       await finalizar(contactId, false);
     }
 
-    const resultado = triar(msg.body);
+    const ctx = menuContexto.get(contactId) || null;
+    const resultado = triar(msg.body, ctx);
+    if ("novoContexto" in resultado) {
+      if (resultado.novoContexto && resultado.novoContexto.length) menuContexto.set(contactId, resultado.novoContexto);
+      else menuContexto.delete(contactId);
+    }
 
     if (resultado.tipo === "atendente") {
       await msg.reply(resultado.resposta);

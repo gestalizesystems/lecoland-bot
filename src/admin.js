@@ -44,6 +44,7 @@ function validar(c) {
   }
   if (typeof c.negocio !== "object") throw new Error('"negocio" deve ser um objeto.');
   if (!Array.isArray(c.mensagensExtras)) c.mensagensExtras = [];
+  if (!Array.isArray(c.menus)) c.menus = [];
   if (typeof c.infoIA !== "string") c.infoIA = "";
   // Preserva o catálogo quando o "Salvar tudo" não o envia (ele tem endpoint próprio).
   if (!c.catalogo || typeof c.catalogo !== "object") {

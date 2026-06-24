@@ -245,5 +245,40 @@
       "Super premium"
     ],
     "produtos": []
-  }
+  },
+  "menus": [
+    {
+      "id": "carrapaticidas",
+      "nome": "Carrapaticidas",
+      "gatilhos": [
+        "carrapato",
+        "carrapaticida",
+        "pulga",
+        "antipulga"
+      ],
+      "intro": "💊 *Carrapaticidas* — qual você procura?",
+      "opcoes": [
+        {
+          "titulo": "Nexgard",
+          "resposta": "💊 *Nexgard*\n\nTemos sim! O valor varia conforme o *peso do pet*. Me diga o peso do seu pet que eu confirmo a dose certa e o valor. 🐾"
+        },
+        {
+          "titulo": "Nexgard Spectra",
+          "resposta": "💊 *Nexgard Spectra*\n\nTemos sim! O valor varia conforme o *peso do pet*. Me diga o peso do seu pet que eu confirmo a dose certa e o valor. 🐾"
+        },
+        {
+          "titulo": "Simparic TRIO",
+          "resposta": "💊 *Simparic TRIO*\n\nTemos sim! O valor varia conforme o *peso do pet*. Me diga o peso do seu pet que eu confirmo a dose certa e o valor. 🐾"
+        },
+        {
+          "titulo": "Bravecto",
+          "resposta": "💊 *Bravecto*\n\nTemos sim! O valor varia conforme o *peso do pet*. Me diga o peso do seu pet que eu confirmo a dose certa e o valor. 🐾"
+        },
+        {
+          "titulo": "Bravecto 365 dias",
+          "resposta": "💊 *Bravecto 365 dias*\n\nTemos sim! O valor varia conforme o *peso do pet*. Me diga o peso do seu pet que eu confirmo a dose certa e o valor. 🐾"
+        }
+      ]
+    }
+  ]
 }

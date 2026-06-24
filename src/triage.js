@@ -45,13 +45,23 @@ function menuPrincipal() {
   );
 }
 
-// Retorna { tipo, resposta } ou { tipo: "ia" } quando não há match e deve cair na IA (Gemini).
-function triar(textoBruto) {
+// Monta o texto de um sub-menu: introdução + opções numeradas + rodapé.
+function menuTexto(menu) {
+  const linhas = (menu.opcoes || []).map((o, i) => `${i + 1} - ${o.titulo}`).join("\n");
+  const intro = config.preencher(menu.intro || `*${menu.nome || "Menu"}*`);
+  return intro + "\n\n" + linhas + "\n\nDigite o *número* da opção desejada.";
+}
+
+// Retorna { tipo, resposta, [novoContexto] } ou { tipo: "ia" } quando não há match.
+// `contexto` = lista de opções do menu atual do cliente (para resolver o número escolhido).
+// `novoContexto` (quando presente) = lista de opções a lembrar para esse cliente.
+function triar(textoBruto, contexto) {
   const dados = config.get();
   const texto = normalizar(textoBruto);
+  const principais = config.intents();
 
   if (!texto) {
-    return { tipo: "menu", resposta: menuPrincipal() };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
   }
 
   if (casaAlgumGatilho(texto, dados.gatilhosAtendente)) {
@@ -59,29 +69,35 @@ function triar(textoBruto) {
   }
 
   if (casaAlgumGatilho(texto, dados.gatilhosSaudacao) || dados.gatilhosSaudacao.includes(texto)) {
-    return { tipo: "menu", resposta: menuPrincipal() };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
   }
 
-  const opcoes = config.intents();
-
-  // Cliente digitou só um número → responde a opção correspondente do menu.
+  // Número → responde a opção do MENU ATUAL (sub-menu) ou, se não houver, do principal.
   if (/^\d+$/.test(texto)) {
+    const lista = contexto && contexto.length ? contexto : principais;
     const indice = parseInt(texto, 10) - 1;
-    if (indice >= 0 && indice < opcoes.length) {
-      const opcao = opcoes[indice];
-      return { tipo: "opcao", chave: opcao.chave, resposta: opcao.resposta };
+    if (indice >= 0 && indice < lista.length) {
+      const opcao = lista[indice];
+      return { tipo: "opcao", chave: opcao.chave, resposta: config.preencher(opcao.resposta) };
     }
-    return { tipo: "menu", resposta: menuPrincipal() };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
   }
 
-  // Palavra-chave de algum serviço/FAQ/entrega.
-  for (const opcao of opcoes) {
+  // Palavra-chave de um SUB-MENU → abre o sub-menu e lembra suas opções.
+  for (const menu of dados.menus || []) {
+    if (casaAlgumGatilho(texto, menu.gatilhos)) {
+      return { tipo: "submenu", chave: menu.id, resposta: menuTexto(menu), novoContexto: menu.opcoes || [] };
+    }
+  }
+
+  // Palavra-chave de serviço/FAQ/entrega (menu principal).
+  for (const opcao of principais) {
     if (casaAlgumGatilho(texto, opcao.gatilhos)) {
-      return { tipo: "opcao", chave: opcao.chave, resposta: opcao.resposta };
+      return { tipo: "opcao", chave: opcao.chave, resposta: config.preencher(opcao.resposta), novoContexto: principais };
     }
   }
 
-  // Mensagens personalizadas (não entram no menu numerado; só por palavra-chave).
+  // Mensagens personalizadas (só por palavra-chave).
   for (const ex of dados.mensagensExtras || []) {
     if (casaAlgumGatilho(texto, ex.gatilhos)) {
       return { tipo: "mensagem", chave: ex.chave, resposta: config.preencher(ex.resposta) };
@@ -92,4 +108,4 @@ function triar(textoBruto) {
   return { tipo: "ia" };
 }
 
-module.exports = { triar, normalizar, menuPrincipal };
+module.exports = { triar, normalizar, menuPrincipal, menuTexto };

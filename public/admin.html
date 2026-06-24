@@ -207,6 +207,12 @@
     .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
     .btn-sec { background: #fff; border: 1px solid var(--borda); border-radius: 10px; padding: 11px 18px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 14px; }
     .switch-l { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-weight: 600; font-size: 14px; }
+    .menu-card { border: 1.5px solid var(--borda) !important; }
+    .opcao-linha { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; background: #f8fafc; border: 1px solid var(--borda); border-radius: 10px; padding: 10px; }
+    .opcao-linha .op-campos { flex: 1; }
+    .opcao-linha .op-campos input, .opcao-linha .op-campos textarea { width: 100%; }
+    .opcao-linha .op-campos input { margin-bottom: 6px; }
+    .opcao-linha textarea { min-height: 46px; }
   </style>
 </head>
 <body>
@@ -339,6 +345,12 @@
             <p class="dica">Cada item vira uma opção numerada no menu (1, 2, 3...). <b>Palavras-chave</b> separadas por vírgula.</p>
             <div id="lista_servicos"></div>
             <button class="add" onclick="addServico()">+ Adicionar opção</button>
+
+            <hr style="border:none;border-top:1px solid var(--borda);margin:26px 0 18px" />
+            <div class="card-head"><h2 style="font-size:18px">🗂️ Menus extras (sub-menus)</h2></div>
+            <p class="dica">Crie menus próprios abertos por palavra-chave (ex.: “carrapaticida” abre o menu de carrapaticidas). Cada menu tem suas opções numeradas, e o cliente escolhe pelo número.</p>
+            <div id="lista_menus"></div>
+            <button class="add" onclick="addMenu()">+ Adicionar menu</button>
           </section>
 
         <section class="card page" id="page-faq">
@@ -576,6 +588,64 @@
       return out;
     }
 
+    // ===== Menus extras (sub-menus) =====
+    function opcaoMenuHtml(o) {
+      const div = document.createElement("div");
+      div.className = "opcao-linha";
+      div.innerHTML = `
+        <div class="op-campos">
+          <input type="text" class="op_titulo" value="${esc((o && o.titulo) || '')}" placeholder="Título (ex.: Nexgard)" />
+          <textarea class="op_resposta" placeholder="Resposta enviada quando o cliente escolher esta opção">${esc((o && o.resposta) || '')}</textarea>
+        </div>
+        <button class="lixeira" onclick="this.closest('.opcao-linha').remove()">🗑</button>`;
+      return div;
+    }
+    function menuHtml(m) {
+      m = m || {};
+      const div = document.createElement("div");
+      div.className = "item menu-card";
+      div.innerHTML = `
+        <div class="titulo-linha">
+          <div style="flex:1"><label>Nome do menu</label><input type="text" class="mn_nome" value="${esc(m.nome || '')}" placeholder="Ex.: Carrapaticidas" /></div>
+          <button class="lixeira" onclick="this.closest('.menu-card').remove()">🗑 excluir menu</button>
+        </div>
+        <label>Palavras-chave que abrem este menu (vírgula)</label>
+        <input type="text" class="mn_gatilhos" value="${esc(listaParaTexto(m.gatilhos || []))}" placeholder="carrapato, carrapaticida" />
+        <label>Texto de introdução (acima das opções)</label>
+        <input type="text" class="mn_intro" value="${esc(m.intro || '')}" placeholder="💊 Carrapaticidas — qual você procura?" />
+        <input type="hidden" class="mn_id" value="${esc(m.id || '')}" />
+        <label>Opções numeradas deste menu</label>
+        <div class="mn_opcoes"></div>
+        <button class="add" type="button" onclick="addOpcaoMenu(this)">+ Adicionar opção</button>`;
+      const cont = div.querySelector(".mn_opcoes");
+      const ops = (m.opcoes && m.opcoes.length) ? m.opcoes : [{}];
+      ops.forEach(o => cont.appendChild(opcaoMenuHtml(o)));
+      return div;
+    }
+    function addMenu() { el("lista_menus").appendChild(menuHtml({})); }
+    function addOpcaoMenu(btn) { btn.previousElementSibling.appendChild(opcaoMenuHtml({})); }
+    function coletarMenus() {
+      const out = [];
+      el("lista_menus").querySelectorAll(".menu-card").forEach(card => {
+        const nome = card.querySelector(".mn_nome").value.trim();
+        if (!nome) return;
+        const opcoes = [];
+        card.querySelectorAll(".opcao-linha").forEach(l => {
+          const titulo = l.querySelector(".op_titulo").value.trim();
+          if (!titulo) return;
+          opcoes.push({ titulo, resposta: l.querySelector(".op_resposta").value });
+        });
+        out.push({
+          id: card.querySelector(".mn_id").value.trim() || slug(nome),
+          nome,
+          gatilhos: textoParaLista(card.querySelector(".mn_gatilhos").value),
+          intro: card.querySelector(".mn_intro").value.trim(),
+          opcoes,
+        });
+      });
+      return out;
+    }
+
     // ===== Taxas =====
     function taxaHtml(t) {
       const div = document.createElement("div");
@@ -618,6 +688,7 @@
       (cfg.mensagensExtras || []).forEach(x => el("lista_msgs").appendChild(itemHtml("mx", x)));
       cfg.servicos.forEach(s => el("lista_servicos").appendChild(itemHtml("sv", s)));
       cfg.faqRapido.forEach(f => el("lista_faq").appendChild(itemHtml("fq", f)));
+      (cfg.menus || []).forEach(m => el("lista_menus").appendChild(menuHtml(m)));
       el("e_ativo").checked = !!e.ativo;
       el("e_titulo").value = e.titulo || "";
       el("e_gatilhos").value = listaParaTexto(e.gatilhos);
@@ -651,6 +722,7 @@
         gatilhosAtendente: textoParaLista(el("g_atendente").value),
         gatilhosSaudacao: textoParaLista(el("g_saudacao").value),
         infoIA: el("n_infoIA").value,
+        menus: coletarMenus(),
       };
       ["nome","tipo","endereco","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento"]
         .forEach(k => novo.negocio[k] = el("n_" + k).value.trim());
