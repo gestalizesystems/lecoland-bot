@@ -525,9 +525,13 @@
 
         <section class="card page" id="page-gatilhos">
           <h2>⚙️ Palavras-chave gerais</h2>
-          <p class="dica">Atalhos para o bot entender comandos importantes.</p>
-          <label>Pedir atendente humano (vírgula)</label><input type="text" id="g_atendente" />
-          <label>Abrir o menu / saudação (vírgula)</label><input type="text" id="g_saudacao" />
+          <p class="dica">Atalhos para o bot entender comandos importantes. Digite e clique em <b>Adicionar</b> (ou Enter).</p>
+          <label>🙋 Pedir atendente humano</label>
+          <div class="tax-add"><input type="text" id="novoGatAtendente" placeholder="Ex.: atendente, humano..." onkeydown="if(event.key==='Enter'){event.preventDefault();addGatilho('atendente')}" /><button class="btn-primary" type="button" onclick="addGatilho('atendente')">Adicionar</button></div>
+          <div class="tax-lista" id="listaGatAtendente"></div>
+          <label style="margin-top:18px">👋 Abrir o menu / saudação</label>
+          <div class="tax-add"><input type="text" id="novoGatSaudacao" placeholder="Ex.: oi, menu, ajuda..." onkeydown="if(event.key==='Enter'){event.preventDefault();addGatilho('saudacao')}" /><button class="btn-primary" type="button" onclick="addGatilho('saudacao')">Adicionar</button></div>
+          <div class="tax-lista" id="listaGatSaudacao"></div>
         </section>
 
         <section class="card page" id="page-conta">
@@ -790,8 +794,9 @@
       el("e_rodape").value = e.rodape || "";
       el("e_origem").value = (e.origem && e.origem.endereco) || "";
       (e.taxas || []).forEach(t => el("lista_taxas").appendChild(taxaHtml(t)));
-      el("g_atendente").value = listaParaTexto(cfg.gatilhosAtendente);
-      el("g_saudacao").value = listaParaTexto(cfg.gatilhosSaudacao);
+      gatilhos.atendente = (cfg.gatilhosAtendente || []).slice();
+      gatilhos.saudacao = (cfg.gatilhosSaudacao || []).slice();
+      renderGatilhos();
       el("ano").textContent = new Date().getFullYear();
     }
 
@@ -813,8 +818,8 @@
           origem: { endereco: el("e_origem").value.trim(), lat: origemAtual.lat, lon: origemAtual.lon },
           taxas: coletarTaxas(),
         },
-        gatilhosAtendente: textoParaLista(el("g_atendente").value),
-        gatilhosSaudacao: textoParaLista(el("g_saudacao").value),
+        gatilhosAtendente: gatilhos.atendente,
+        gatilhosSaudacao: gatilhos.saudacao,
         infoIA: el("n_infoIA").value,
         menus: coletarMenus(),
       };
@@ -1177,6 +1182,21 @@
         pintarBot(d.ativo, d.conectado);
       } catch (e) { alert("Erro ao mudar o bot: " + e.message); carregarBot(); }
     }
+
+    // ===== Palavras-chave gerais (chips) =====
+    let gatilhos = { atendente: [], saudacao: [] };
+    function renderGatilhos() {
+      [["atendente", "listaGatAtendente"], ["saudacao", "listaGatSaudacao"]].forEach(([t, alvo]) => {
+        el(alvo).innerHTML = (gatilhos[t] || []).map((v, i) => `<span class="tax-item">${esc(v)}<button title="Remover" onclick="removerGatilho('${t}', ${i})">×</button></span>`).join("") || '<p class="dica">Nenhuma palavra-chave ainda.</p>';
+      });
+    }
+    function addGatilho(tipo) {
+      const inp = el(tipo === "atendente" ? "novoGatAtendente" : "novoGatSaudacao");
+      const v = inp.value.trim(); if (!v) return;
+      if (!gatilhos[tipo].some(x => x.toLowerCase() === v.toLowerCase())) gatilhos[tipo].push(v);
+      inp.value = ""; renderGatilhos();
+    }
+    function removerGatilho(tipo, i) { gatilhos[tipo].splice(i, 1); renderGatilhos(); }
 
     carregar().then(() => {
       initDashData();
