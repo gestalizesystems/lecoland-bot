@@ -37,17 +37,20 @@ function foraDoHorario(dados) {
   const exp = dados.expediente;
   if (!exp || !exp.ativo) return false; // recurso desligado → sempre atende
   const tz = exp.timezone || "America/Fortaleza";
-  let wd, hh, mm;
+  let wd, hh, mm, hoje;
   try {
     const partes = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+      timeZone: tz, weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
     }).formatToParts(new Date());
     wd = partes.find((p) => p.type === "weekday").value;
     hh = +partes.find((p) => p.type === "hour").value;
     mm = +partes.find((p) => p.type === "minute").value;
+    hoje = partes.find((p) => p.type === "day").value + "/" + partes.find((p) => p.type === "month").value;
   } catch (_) {
     return false; // em caso de erro de fuso, não bloqueia o atendimento
   }
+  // Feriado (formato DD/MM, todo ano) → loja fechada.
+  if (Array.isArray(exp.feriados) && exp.feriados.includes(hoje)) return true;
   const agora = hh * 60 + mm;
   const faixa = wd === "Sun" ? exp.domingo : wd === "Sat" ? exp.sabado : exp.semana;
   if (!faixa || !faixa.abre || !faixa.fecha) return true; // dia fechado

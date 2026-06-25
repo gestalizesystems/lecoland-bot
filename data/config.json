@@ -333,7 +333,8 @@
     "domingo": {
       "abre": "",
       "fecha": ""
-    }
+    },
+    "feriados": []
   },
   "_entregaSubmenu": true
 }

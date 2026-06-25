@@ -409,6 +409,10 @@
               <div class="exp-linha"><span>Domingo</span><input type="time" id="exp_domingo_abre" /><span>às</span><input type="time" id="exp_domingo_fecha" /></div>
             </div>
             <p class="dica">Deixe um dia <b>em branco</b> = <b>fechado</b> (ex.: domingo).</p>
+            <label style="margin-top:10px">📅 Feriados (loja fechada — envia a ausência)</label>
+            <p class="dica">Selecione a data e clique em Adicionar. Vale todo ano (dia/mês).</p>
+            <div class="tax-add"><input type="date" id="novoFeriado" /><button class="btn-primary" type="button" onclick="addFeriado()">Adicionar</button></div>
+            <div class="tax-lista" id="listaFeriados"></div>
           </section>
 
           <section class="card page" id="page-opcoes">
@@ -784,6 +788,8 @@
         el("exp_" + d + "_abre").value = (fonte && fonte.abre) || "";
         el("exp_" + d + "_fecha").value = (fonte && fonte.fecha) || "";
       });
+      feriados = (cfg.expediente && Array.isArray(cfg.expediente.feriados)) ? cfg.expediente.feriados.slice() : [];
+      renderFeriados();
       (cfg.mensagensExtras || []).forEach(x => el("lista_msgs").appendChild(itemHtml("mx", x)));
       cfg.servicos.forEach(s => el("lista_servicos").appendChild(itemHtml("sv", s)));
       cfg.faqRapido.forEach(f => el("lista_faq").appendChild(itemHtml("fq", f)));
@@ -828,6 +834,7 @@
         semana: { abre: el("exp_semana_abre").value, fecha: el("exp_semana_fecha").value },
         sabado: { abre: el("exp_sabado_abre").value, fecha: el("exp_sabado_fecha").value },
         domingo: { abre: el("exp_domingo_abre").value, fecha: el("exp_domingo_fecha").value },
+        feriados: feriados,
       };
 
       // Se o endereço de partida mudou, zera as coordenadas para recalcular.
@@ -1192,6 +1199,19 @@
       inp.value = ""; renderGatilhos();
     }
     function removerGatilho(tipo, i) { gatilhos[tipo].splice(i, 1); renderGatilhos(); }
+
+    // ===== Feriados (DD/MM) =====
+    let feriados = [];
+    function renderFeriados() {
+      el("listaFeriados").innerHTML = feriados.map((f, i) => `<span class="tax-item">${esc(f)}<button title="Remover" onclick="removerFeriado(${i})">×</button></span>`).join("") || '<p class="dica">Nenhum feriado cadastrado.</p>';
+    }
+    function addFeriado() {
+      const v = el("novoFeriado").value; if (!v) return; // YYYY-MM-DD
+      const partes = v.split("-"); const dm = partes[2] + "/" + partes[1];
+      if (!feriados.includes(dm)) feriados.push(dm);
+      el("novoFeriado").value = ""; renderFeriados();
+    }
+    function removerFeriado(i) { feriados.splice(i, 1); renderFeriados(); }
 
     carregar().then(() => {
       initDashData();
