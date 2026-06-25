@@ -110,7 +110,7 @@ function montarContexto() {
     "",
     "💰 *Valor da taxa:* *R$ <valor>*",
     "",
-    `- ENTREGA GRÁTIS: até ${g.km || 2} km, se o valor do pedido for acima de R$ ${g.valor || 50}, a entrega é GRÁTIS (R$ 0). Se a distância for até ${g.km || 2} km e o cliente não disse o valor do pedido, avise que acima de R$ ${g.valor || 50} a entrega sai de graça.`,
+    `- ENTREGA GRÁTIS (vale APENAS para o serviço *Entrega moto* — NÃO vale para táxi dog): até ${g.km || 2} km, se o valor do pedido for acima de R$ ${g.valor || 50}, a Entrega moto é GRÁTIS (R$ 0). Se for até ${g.km || 2} km e o cliente não disse o valor do pedido, avise que, acima de R$ ${g.valor || 50}, a entrega moto sai de graça. Táxi dog sempre cobra a taxa normal.`,
     "- Táxi Dog é sempre ida e volta. Se o cliente ainda não escolheu o serviço, pergunte: entrega moto, táxi dog moto ou táxi dog carro.",
     "- Se a função não encontrar o endereço, ou a distância passar da área de cobertura, diga que um atendente confirma o valor exato.",
   ].join("\n");

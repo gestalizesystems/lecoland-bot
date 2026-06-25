@@ -131,7 +131,7 @@ async function processar(from, texto) {
   const ctx = menuContexto.get(from) || null;
   const r = triar(texto, ctx);
   if ("novoContexto" in r) {
-    if (r.novoContexto && r.novoContexto.length) menuContexto.set(from, r.novoContexto);
+    if (r.novoContexto) menuContexto.set(from, r.novoContexto);
     else menuContexto.delete(from);
   }
 

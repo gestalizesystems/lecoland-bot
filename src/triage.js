@@ -49,7 +49,7 @@ function menuPrincipal() {
 function menuTexto(menu) {
   const linhas = (menu.opcoes || []).map((o, i) => `${i + 1} - ${o.titulo}`).join("\n");
   const intro = config.preencher(menu.intro || `*${menu.nome || "Menu"}*`);
-  return intro + "\n\n" + linhas + "\n\nDigite o *número* da opção desejada.";
+  return intro + "\n\n" + linhas + "\n\nDigite o *número* da opção (ou *0* para voltar).";
 }
 
 // Retorna { tipo, resposta, [novoContexto] } ou { tipo: "ia" } quando não há match.
@@ -59,9 +59,10 @@ function triar(textoBruto, contexto) {
   const dados = config.get();
   const texto = normalizar(textoBruto);
   const principais = config.intents();
+  const ctxPrincipal = { opcoes: principais, texto: menuPrincipal(), sub: false };
 
   if (!texto) {
-    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: ctxPrincipal };
   }
 
   if (casaAlgumGatilho(texto, dados.gatilhosAtendente)) {
@@ -69,31 +70,42 @@ function triar(textoBruto, contexto) {
   }
 
   if (casaAlgumGatilho(texto, dados.gatilhosSaudacao) || dados.gatilhosSaudacao.includes(texto)) {
-    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: ctxPrincipal };
+  }
+
+  // "0" ou "voltar" → volta ao menu atual (sub-menu) ou, se não houver, ao principal.
+  if (texto === "0" || casaAlgumGatilho(texto, ["voltar", "voltar menu", "menu anterior", "voltar ao menu"])) {
+    if (contexto && contexto.sub && contexto.texto) {
+      return { tipo: "menu", resposta: contexto.texto }; // re-mostra o sub-menu (mantém o contexto)
+    }
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: ctxPrincipal };
   }
 
   // Número → responde a opção do MENU ATUAL (sub-menu) ou, se não houver, do principal.
   if (/^\d+$/.test(texto)) {
-    const lista = contexto && contexto.length ? contexto : principais;
+    const lista = contexto && contexto.opcoes && contexto.opcoes.length ? contexto.opcoes : principais;
     const indice = parseInt(texto, 10) - 1;
     if (indice >= 0 && indice < lista.length) {
       const opcao = lista[indice];
-      return { tipo: "opcao", chave: opcao.chave, resposta: config.preencher(opcao.resposta) };
+      let resp = config.preencher(opcao.resposta);
+      if (contexto && contexto.sub) resp += "\n\n↩️ Digite *0* para voltar ao menu.";
+      return { tipo: "opcao", chave: opcao.chave, resposta: resp };
     }
-    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: principais };
+    return { tipo: "menu", resposta: menuPrincipal(), novoContexto: ctxPrincipal };
   }
 
-  // Palavra-chave de um SUB-MENU → abre o sub-menu e lembra suas opções.
+  // Palavra-chave de um SUB-MENU → abre o sub-menu e lembra suas opções + o texto.
   for (const menu of dados.menus || []) {
     if (casaAlgumGatilho(texto, menu.gatilhos)) {
-      return { tipo: "submenu", chave: menu.id, resposta: menuTexto(menu), novoContexto: menu.opcoes || [] };
+      const t = menuTexto(menu);
+      return { tipo: "submenu", chave: menu.id, resposta: t, novoContexto: { opcoes: menu.opcoes || [], texto: t, sub: true } };
     }
   }
 
-  // Palavra-chave de serviço/FAQ/entrega (menu principal).
+  // Palavra-chave de serviço/FAQ (menu principal).
   for (const opcao of principais) {
     if (casaAlgumGatilho(texto, opcao.gatilhos)) {
-      return { tipo: "opcao", chave: opcao.chave, resposta: config.preencher(opcao.resposta), novoContexto: principais };
+      return { tipo: "opcao", chave: opcao.chave, resposta: config.preencher(opcao.resposta), novoContexto: ctxPrincipal };
     }
   }
 
