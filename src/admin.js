@@ -11,7 +11,24 @@ const estado = require("./estado");
 const conversa = require("./conversa");
 
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
-const UPLOAD_DIR = path.join(PUBLIC_DIR, "uploads");
+// Em produção (Railway) as imagens vão para o Volume persistente; local usa public/uploads.
+const UPLOAD_DIR = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "uploads") : path.join(PUBLIC_DIR, "uploads");
+
+// Na 1ª vez no Volume, copia as imagens versionadas (ex.: logo.png) para o destino persistente.
+function semearUploads() {
+  if (!process.env.DATA_DIR) return; // local já usa public/uploads diretamente
+  try {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    const origem = path.join(PUBLIC_DIR, "uploads");
+    if (!fs.existsSync(origem)) return;
+    for (const f of fs.readdirSync(origem)) {
+      const dest = path.join(UPLOAD_DIR, f);
+      if (!fs.existsSync(dest)) fs.copyFileSync(path.join(origem, f), dest);
+    }
+  } catch (e) {
+    console.error("Falha ao semear uploads:", e.message);
+  }
+}
 
 // Sessões em memória: token -> instante de expiração (ms). Some ao reiniciar.
 const sessoes = new Map();
@@ -71,6 +88,8 @@ function iniciarAdmin(porta) {
   const app = express();
   app.set("trust proxy", 1); // atrás do proxy do Railway: respeita x-forwarded-for/proto
   app.use(express.json({ limit: "8mb" }));
+
+  semearUploads();
 
   // A logo e a imagem do robô são públicas (aparecem na tela de login).
   app.use("/uploads", express.static(UPLOAD_DIR));

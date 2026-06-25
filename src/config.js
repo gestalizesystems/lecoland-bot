@@ -4,11 +4,18 @@
 const fs = require("fs");
 const path = require("path");
 
-const CAMINHO = path.join(__dirname, "..", "data", "config.json");
+// Em produção (Railway) o DATA_DIR aponta para um Volume persistente; local usa data/.
+const DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
+const SEMENTE = path.join(__dirname, "..", "data", "config.json"); // versão inicial (no repo)
+const CAMINHO = path.join(DIR, "config.json");
 
 let dados = carregar();
 
 function carregar() {
+  if (!fs.existsSync(CAMINHO)) {
+    fs.mkdirSync(DIR, { recursive: true });
+    fs.copyFileSync(SEMENTE, CAMINHO); // 1ª vez no Volume: semeia a partir do repo
+  }
   const bruto = fs.readFileSync(CAMINHO, "utf8");
   return JSON.parse(bruto);
 }
