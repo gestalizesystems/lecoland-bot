@@ -955,9 +955,11 @@
       if (e) e.stopPropagation();
       const pop = el("contaPop");
       if (!pop.classList.contains("aberto")) {
-        const r = document.querySelector(".brand").getBoundingClientRect();
-        pop.style.top = (r.bottom + 4) + "px";
-        pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 288)) + "px";
+        const sb = document.querySelector(".sidebar").getBoundingClientRect();
+        const brand = document.querySelector(".brand").getBoundingClientRect();
+        pop.style.top = (brand.bottom + 4) + "px";
+        pop.style.left = (sb.left + 10) + "px";
+        pop.style.width = (sb.width - 20) + "px"; // encaixa dentro da sidebar
       }
       pop.classList.toggle("aberto");
     }
