@@ -13,12 +13,6 @@ function carregar() {
   return JSON.parse(bruto);
 }
 
-// Relê o arquivo do disco (chamado após salvar pelo painel).
-function reload() {
-  dados = carregar();
-  return dados;
-}
-
 // Retorna os dados atuais em memória.
 function get() {
   return dados;
@@ -112,4 +106,4 @@ function intents() {
   return lista;
 }
 
-module.exports = { get, reload, salvar, preencher, respostaEntrega, intents, calcularTaxas, CAMINHO };
+module.exports = { get, salvar, preencher, respostaEntrega, intents, calcularTaxas, CAMINHO };
