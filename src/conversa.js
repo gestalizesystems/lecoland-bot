@@ -222,8 +222,8 @@ async function processar(from, texto, nomeWpp) {
   }
 
   if (r.resposta) {
-    // Banho/tosa: se ainda não souber o pet do cliente, pergunta nome + raça (a IA cuida da resposta).
-    if (r.tipo === "opcao" && /banho|tosa/i.test(r.titulo || "")) {
+    // Banho/tosa/consulta/vacina: se ainda não souber o pet, pergunta nome + raça (a IA cuida da resposta).
+    if (r.tipo === "opcao" && /banho|tosa|consult|veterin|vacin/i.test(r.titulo || "")) {
       const cli = clientes.get(from);
       if (!cli || !Array.isArray(cli.pets) || !cli.pets.length) {
         r.resposta += "\n\n🐾 Pra deixar tudo certinho, me diz o *nome* e a *raça* do seu pet?";
