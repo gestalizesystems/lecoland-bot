@@ -551,7 +551,6 @@
           </div>
 
           <div class="cat-sub ativo" id="catsub-produtos">
-            <div class="cat-stats" id="catStats"></div>
             <div class="cat-topo">
               <input class="busca" id="catBusca" placeholder="🔎 Buscar produto..." oninput="renderProdutos()" />
               <button class="btn-primary" onclick="abrirProduto()">+ Adicionar produto</button>
@@ -1207,12 +1206,6 @@
       el("catsub-" + nome).classList.add("ativo");
     }
     function renderCatalogo() {
-      el("catStats").innerHTML = [
-        ["Total de produtos", catalogo.produtos.length],
-        ["Grupos", catalogo.grupos.length],
-        ["Subgrupos", catalogo.subgrupos.length],
-        ["Produtos ativos", catalogo.produtos.filter(p => p.ativo !== false).length],
-      ].map(([r, n]) => `<div class="cat-stat"><div class="n">${n}</div><div class="r">${r}</div></div>`).join("");
       renderProdutos();
       renderTaxLista("grupos", "listaGrupos");
       renderTaxLista("subgrupos", "listaSubgrupos");
