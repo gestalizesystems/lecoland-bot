@@ -125,7 +125,11 @@
       .data-full { display: none; }
       .data-curta { display: inline; }
       .content { padding: 12px; }
-      .dash-kpis, .cat-stats { grid-template-columns: 1fr; }
+      .dash-kpis { grid-template-columns: 1fr; }
+      .cat-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .cat-stat { padding: 11px 13px; }
+      .cat-stat .n { font-size: 20px; }
+      .cat-stat .r { font-size: 11.5px; }
       .conta-nome { max-width: 84px; }
       .conta-pop { width: min(272px, calc(100vw - 24px)); }
       .data-pop { right: -4px; }
@@ -138,7 +142,8 @@
       .exp-linha { flex-wrap: wrap; }
       .opcao-linha { flex-wrap: wrap; }
       .modal { padding: 18px; }
-      .cat-tabs { overflow-x: auto; }
+      .cat-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 2px; -webkit-overflow-scrolling: touch; }
+      .cat-tab { padding: 9px 10px; font-size: 13px; white-space: nowrap; }
     }
 
     /* Cada menu abre uma tela própria */
@@ -313,7 +318,8 @@
       .dash-grafico svg, .kpi svg { max-width: 100%; }
     }
     @media (max-width: 600px) {
-      .dash-kpis, .cat-stats, .dash-2, .dash-2b { grid-template-columns: 1fr; gap: 14px; }
+      .dash-kpis, .dash-2, .dash-2b { grid-template-columns: 1fr; gap: 14px; }
+      .cat-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .kpi { padding: 16px; }
       .kpi .ico { width: 40px; height: 40px; font-size: 20px; }
       .kpi .valor { font-size: 30px; }
@@ -609,10 +615,10 @@
           <div class="tax-lista" id="listaGatSaudacao"></div>
 
           <hr style="border:none;border-top:1px solid var(--borda);margin:24px 0 16px" />
-          <h3 style="margin:0 0 2px; font-size:16px; color:var(--navy)">📌 Comandos personalizados</h3>
-          <p class="dica">Crie seus próprios comandos: o cliente digita uma palavra-chave e recebe a resposta que você definir.</p>
+          <h3 style="margin:0 0 2px; font-size:16px; color:var(--navy)">📌 Comandos personalizados (grupos de palavras-chave)</h3>
+          <p class="dica">Crie um <b>grupo de palavras-chave</b> com um nome. Quando o cliente usar qualquer uma delas, o bot envia a resposta que você definir.</p>
           <div id="lista_msgs"></div>
-          <button class="add" onclick="addMsg()">+ Adicionar novo comando</button>
+          <button class="add" onclick="addMsg()">+ Adicionar novo grupo</button>
         </section>
 
         <section class="card page" id="page-conta">
@@ -753,7 +759,55 @@
     }
     function addServico() { el("lista_servicos").appendChild(itemHtml("sv", { titulo: "", gatilhos: [], resposta: "" })); }
     function addFaq() { el("lista_faq").appendChild(itemHtml("fq", { titulo: "", gatilhos: [], resposta: "" })); }
-    function addMsg() { el("lista_msgs").appendChild(itemHtml("mx", { titulo: "", gatilhos: [], resposta: "" })); }
+    // ===== Comandos personalizados = grupos de palavras-chave (com chips) =====
+    function comandoHtml(o) {
+      const div = document.createElement("div");
+      div.className = "item comando";
+      div.__gatilhos = (o.gatilhos || []).slice();
+      div.innerHTML = `
+        <div class="titulo-linha">
+          <div style="flex:1"><label>Nome do grupo</label><input type="text" class="cmd_titulo" value="${esc(o.titulo)}" placeholder="Ex.: Segunda via de boleto" /></div>
+          <button class="lixeira" onclick="this.closest('.item').remove()">🗑 remover</button>
+        </div>
+        <label>Palavras-chave deste grupo</label>
+        <div class="tax-add"><input type="text" class="cmd_novo" placeholder="Digite e clique em Adicionar..." onkeydown="if(event.key==='Enter'){event.preventDefault();addGatilhoComando(this)}" /><button class="btn-primary" type="button" onclick="addGatilhoComando(this.previousElementSibling)">Adicionar</button></div>
+        <div class="tax-lista cmd_chips"></div>
+        <label>Resposta enviada ao cliente</label>
+        <textarea class="cmd_resposta">${esc(o.resposta)}</textarea>
+        <input type="hidden" class="cmd_chave" value="${esc(o.chave || '')}" />`;
+      renderComandoChips(div);
+      return div;
+    }
+    function renderComandoChips(card) {
+      const g = card.__gatilhos || [];
+      card.querySelector(".cmd_chips").innerHTML = g.length
+        ? g.map((v) => `<span class="tax-item">${esc(v)}<button type="button" title="Remover" onclick="removerGatilhoComando(this)">×</button></span>`).join("")
+        : '<span class="dica" style="font-size:12px">Nenhuma palavra-chave ainda.</span>';
+    }
+    function addGatilhoComando(input) {
+      const card = input.closest(".item");
+      const v = input.value.trim(); if (!v) return;
+      card.__gatilhos = card.__gatilhos || [];
+      if (!card.__gatilhos.some((x) => x.toLowerCase() === v.toLowerCase())) card.__gatilhos.push(v);
+      input.value = ""; renderComandoChips(card);
+    }
+    function removerGatilhoComando(btn) {
+      const card = btn.closest(".item");
+      const chips = [...card.querySelectorAll(".cmd_chips .tax-item")];
+      const idx = chips.indexOf(btn.closest(".tax-item"));
+      if (idx > -1) { card.__gatilhos.splice(idx, 1); renderComandoChips(card); }
+    }
+    function coletarComandos() {
+      const out = [];
+      el("lista_msgs").querySelectorAll(".item").forEach((item) => {
+        const titulo = item.querySelector(".cmd_titulo").value.trim();
+        if (!titulo) return;
+        const chave = item.querySelector(".cmd_chave").value.trim() || slug(titulo);
+        out.push({ chave, titulo, gatilhos: (item.__gatilhos || []).slice(), resposta: item.querySelector(".cmd_resposta").value });
+      });
+      return out;
+    }
+    function addMsg() { el("lista_msgs").appendChild(comandoHtml({ titulo: "", gatilhos: [], resposta: "" })); }
     function coletarItens(containerId, prefixo) {
       const out = [];
       el(containerId).querySelectorAll(".item").forEach(item => {
@@ -876,7 +930,7 @@
       });
       feriados = (cfg.expediente && Array.isArray(cfg.expediente.feriados)) ? cfg.expediente.feriados.slice() : [];
       renderFeriados();
-      (cfg.mensagensExtras || []).forEach(x => el("lista_msgs").appendChild(itemHtml("mx", x)));
+      (cfg.mensagensExtras || []).forEach(x => el("lista_msgs").appendChild(comandoHtml(x)));
       cfg.servicos.forEach(s => el("lista_servicos").appendChild(itemHtml("sv", s)));
       cfg.faqRapido.forEach(f => el("lista_faq").appendChild(itemHtml("fq", f)));
       (cfg.menus || []).forEach(m => el("lista_menus").appendChild(menuHtml(m)));
@@ -896,7 +950,7 @@
       const novo = {
         negocio: {},
         mensagens: {},
-        mensagensExtras: coletarItens("lista_msgs", "mx"),
+        mensagensExtras: coletarComandos(),
         servicos: coletarItens("lista_servicos", "sv"),
         faqRapido: coletarItens("lista_faq", "fq"),
         entrega: {
