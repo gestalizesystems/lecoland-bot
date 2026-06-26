@@ -43,6 +43,21 @@ function migrar(d) {
     }
     d._entregaSubmenu = true; mudou = true;
   }
+  // Importa o catálogo ONEPET (nome + preço) para o Volume, uma única vez.
+  if (!d._onepetImportado) {
+    try {
+      const sem = JSON.parse(fs.readFileSync(SEMENTE, "utf8"));
+      const semProds = (sem.catalogo && sem.catalogo.produtos) || [];
+      if (!d.catalogo || typeof d.catalogo !== "object") d.catalogo = { grupos: [], subgrupos: [], especificacoes: [], produtos: [] };
+      if (!Array.isArray(d.catalogo.produtos)) d.catalogo.produtos = [];
+      const tem = new Set(d.catalogo.produtos.map((p) => String(p.nome || "").toLowerCase().trim()));
+      for (const p of semProds) {
+        const k = String(p.nome || "").toLowerCase().trim();
+        if (k && !tem.has(k)) { d.catalogo.produtos.push(p); tem.add(k); }
+      }
+      d._onepetImportado = true; mudou = true;
+    } catch (_) { /* sem seed acessível — ignora */ }
+  }
   // Remove gatilhos de saudação amplos demais que sequestravam pedidos reais
   // (ex.: "queria pedir uma ração" batia em "pedir" e mandava o menu).
   if (!d._gatilhosLimpos) {

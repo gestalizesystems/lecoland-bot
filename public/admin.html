@@ -602,6 +602,7 @@
                 </div>
               </div>
               <label>Nome</label><input type="text" id="prodNome" />
+              <label>Código</label><input type="text" id="prodCodigo" placeholder="Ex.: 343794" />
               <label>Descrição</label><textarea id="prodDesc"></textarea>
               <label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="Ex.: 129,90" />
               <label>Grupo</label><select id="prodGrupo"></select>
@@ -1234,11 +1235,13 @@
     function renderProdutos() {
       const q = normCat(el("catBusca").value);
       const filtro = el("catFiltro") ? el("catFiltro").value : "todos";
-      let lista = catalogo.produtos.filter(p => !q || normCat(p.nome + " " + (p.descricao || "") + " " + (p.grupo || "") + " " + (p.subgrupos || []).join(" ")).includes(q));
+      let lista = catalogo.produtos.filter(p => !q || normCat(p.nome + " " + (p.codigo || "") + " " + (p.descricao || "") + " " + (p.grupo || "") + " " + (p.subgrupos || []).join(" ")).includes(q));
       if (filtro === "ativos") lista = lista.filter(p => p.ativo !== false);
       else if (filtro === "inativos") lista = lista.filter(p => p.ativo === false);
       if (!lista.length) { el("catProdutos").innerHTML = `<p class="dica">Nenhum produto ${catalogo.produtos.length ? "encontrado" : "cadastrado ainda"}. Clique em “Adicionar produto”.</p>`; return; }
-      el("catProdutos").innerHTML = lista.map(p => `
+      const TETO = 100, total = lista.length;
+      const aviso = total > TETO ? `<p class="dica">Mostrando ${TETO} de ${total} produtos — use a 🔎 busca (nome ou código) para refinar.</p>` : "";
+      el("catProdutos").innerHTML = aviso + lista.slice(0, TETO).map(p => `
         <div class="prod ${p.ativo === false ? "inativo" : ""}">
           <label class="prod-toggle" title="${p.ativo === false ? "Ativar (em estoque)" : "Desativar (em falta)"}">
             <input type="checkbox" ${p.ativo !== false ? "checked" : ""} onchange="toggleProdutoAtivo('${p.id}', this.checked)" /><span class="sl"></span>
@@ -1246,6 +1249,7 @@
           ${p.imagem ? `<img class="pimg" src="${esc(p.imagem)}" />` : `<div class="semimg">📦</div>`}
           <div class="pinfo">
             <div class="pnome">${esc(p.nome)} ${p.ativo === false ? '<span style="color:#dc2626;font-size:12px">(inativo)</span>' : ""}</div>
+            ${p.codigo ? `<div class="pcod" style="font-size:12px;color:var(--suave);font-weight:600">cód ${esc(p.codigo)}</div>` : ""}
             <div class="pdesc">${esc(p.descricao || "")}</div>
             <div class="chips">
               ${p.grupo ? `<span class="chipg">${esc(p.grupo)}</span>` : ""}
@@ -1281,6 +1285,7 @@
       const p = id ? catalogo.produtos.find(x => x.id === id) : null;
       el("modalTitulo").textContent = p ? "Editar produto" : "Novo produto";
       el("prodNome").value = p ? p.nome : "";
+      el("prodCodigo").value = p ? (p.codigo || "") : "";
       el("prodDesc").value = p ? (p.descricao || "") : "";
       el("prodPreco").value = p ? (p.preco || "") : "";
       el("prodAtivo").checked = p ? p.ativo !== false : true;
@@ -1310,7 +1315,8 @@
       const nome = el("prodNome").value.trim();
       if (!nome) { alert("Informe o nome do produto."); return; }
       const dados = {
-        nome, descricao: el("prodDesc").value.trim(), preco: el("prodPreco").value.trim(),
+        nome, codigo: el("prodCodigo").value.trim(),
+        descricao: el("prodDesc").value.trim(), preco: el("prodPreco").value.trim(),
         imagem: prodImagem, grupo: el("prodGrupo").value,
         subgrupos: coletarChecks("prodSubgrupos"), especificacoes: coletarChecks("prodEspec"),
         ativo: el("prodAtivo").checked,
