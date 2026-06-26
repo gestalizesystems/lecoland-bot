@@ -120,8 +120,10 @@
     @media (max-width: 600px) {
       .topbar h1 { font-size: 17px; }
       .topbar p { display: none; }
-      .topbar-actions { width: 100%; justify-content: flex-start; }
-      .btn-data { font-size: 11.5px; padding: 6px 10px; gap: 5px; border-radius: 8px; }
+      .topbar-actions { justify-content: flex-end; }
+      .btn-data { font-size: 11.5px; padding: 6px 10px; gap: 5px; border-radius: 8px; white-space: nowrap; }
+      .data-full { display: none; }
+      .data-curta { display: inline; }
       .content { padding: 12px; }
       .dash-kpis, .cat-stats { grid-template-columns: 1fr; }
       .conta-nome { max-width: 84px; }
@@ -217,6 +219,7 @@
     .leg .pt { width: 11px; height: 11px; border-radius: 50%; }
     select.filtro { padding: 7px 10px; border: 1px solid var(--borda); border-radius: 9px; font-size: 13px; font-family: inherit; background: #fff; cursor: pointer; }
     .btn-data { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--borda); border-radius: 9px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--texto); }
+    .data-curta { display: none; }
     .data-pop { position: absolute; top: 70px; right: 26px; background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.14); z-index: 20; display: none; width: 230px; }
     .data-pop label { margin-top: 8px; }
     .dash-aviso { font-size: 12px; color: var(--suave); background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 9px 12px; margin-bottom: 16px; }
@@ -304,7 +307,9 @@
     @media (max-width: 900px) {
       html, body { overflow-x: clip; }   /* impede vazamento horizontal no mobile (alinha a lateral direita) */
       .main, .content { max-width: 100%; overflow-x: clip; }
+      .bloco { min-width: 0; overflow: hidden; }   /* item de grid: deixa encolher em vez de estourar a tela */
       .rt .info { min-width: 0; }         /* deixa o texto da lista encolher em vez de empurrar a largura */
+      .rt .info .nome, .rt .info .msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .dash-grafico svg, .kpi svg { max-width: 100%; }
     }
     @media (max-width: 600px) {
@@ -393,7 +398,7 @@
         </div>
         <div class="topbar-actions">
           <span id="status"></span>
-          <button class="btn-data" id="btnData" onclick="toggleData()" style="display:none">📅 <span id="dataLabel">Período</span></button>
+          <button class="btn-data" id="btnData" onclick="toggleData()" style="display:none">📅 <span id="dataLabel" class="data-full">Período</span><span id="dataLabelCurto" class="data-curta">Período</span></button>
           <div class="data-pop" id="dataPop">
             <label>Data início</label><input type="date" id="dataIni" />
             <label>Data fim</label><input type="date" id="dataFim" />
@@ -1119,16 +1124,21 @@
     function renderDashboard() { if (!cfg) return; renderKpis(); renderTempoReal(); renderServicos(); renderStatus(); renderGrafico(); }
     function toggleData() { const p = el("dataPop"); p.style.display = p.style.display === "block" ? "none" : "block"; }
     function fmtData(s) { const p = s.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+    function fmtCurta(s) { const p = s.split("-"); return p[2] + "/" + p[1]; }
+    function setDataLabels(ini, fim) {
+      el("dataLabel").textContent = fmtData(ini) + " - " + fmtData(fim);
+      el("dataLabelCurto").textContent = fmtCurta(ini) + " - " + fmtCurta(fim);
+    }
     function aplicarData() {
       const ini = el("dataIni").value, fim = el("dataFim").value;
-      if (ini && fim) { window.__dashFim = fim; el("dataLabel").textContent = fmtData(ini) + " - " + fmtData(fim); renderGrafico(); }
+      if (ini && fim) { window.__dashFim = fim; setDataLabels(ini, fim); renderGrafico(); }
       el("dataPop").style.display = "none";
     }
     function initDashData() {
       const iso = (d) => d.toISOString().slice(0, 10);
       const fim = new Date(), ini = new Date(); ini.setDate(ini.getDate() - 29);
       el("dataIni").value = iso(ini); el("dataFim").value = iso(fim); window.__dashFim = iso(fim);
-      el("dataLabel").textContent = fmtData(iso(ini)) + " - " + fmtData(iso(fim));
+      setDataLabels(iso(ini), iso(fim));
     }
 
     // ===== Catálogo =====
