@@ -32,6 +32,21 @@ const TOOLS = [
         },
       },
       {
+        name: "buscar_produtos",
+        description:
+          "Busca produtos no CATÁLOGO da loja. Use quando o cliente quiser comprar/ver um PRODUTO (ração, petisco, brinquedo, acessório, areia, cosmético, etc.). Antes de chamar, faça perguntas curtas para descobrir o subgrupo (ex.: cão ou gato) e a especificação (ex.: filhote/adulto, porte, linha). Passe os filtros que já souber. Apresente só o que a função retornar (não invente produtos nem preços).",
+        parameters: {
+          type: "object",
+          properties: {
+            grupo: { type: "string", description: "Categoria principal (use exatamente um dos grupos listados no contexto, ex.: 'Rações')." },
+            subgrupo: { type: "string", description: "Para qual animal/tipo (use um dos subgrupos do contexto, ex.: 'Cão', 'Gato')." },
+            especificacao: { type: "string", description: "Detalhe de idade/porte/linha (use uma das especificações do contexto, ex.: 'Filhote', 'Adulto porte médio', 'Premium')." },
+            texto: { type: "string", description: "Busca livre por nome/descrição, se o cliente citar marca ou termo específico." },
+          },
+          required: [],
+        },
+      },
+      {
         name: "encaminhar_para_atendente",
         description:
           "Use quando o atendimento precisar de um ATENDENTE HUMANO. Exemplos: exames (precisa da guia do veterinário), pedido de remédio com nome/receita/foto, fechar valor de pacote de banho de cliente frequente, venda de aves/animais (ex.: calopsita), reclamações, ou qualquer caso fora do seu conhecimento. Ao chamar esta função, escreva TAMBÉM uma mensagem curta e simpática avisando o cliente que você já vai chamar um atendente.",
@@ -50,9 +65,46 @@ const TOOLS = [
   },
 ];
 
+// Normaliza para comparar (minúsculas, sem acento, sem espaços nas bordas).
+function norm(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
+// Busca produtos ativos no catálogo por grupo / subgrupo / especificação / texto livre.
+function buscarProdutos({ grupo, subgrupo, especificacao, texto } = {}) {
+  const cat = config.get().catalogo || {};
+  const produtos = (cat.produtos || []).filter((p) => p && p.ativo !== false);
+  const g = norm(grupo), sg = norm(subgrupo), esp = norm(especificacao), tx = norm(texto);
+  const casa = (valor, alvo) => valor && (norm(valor).includes(alvo) || alvo.includes(norm(valor)));
+  const casaLista = (lista, alvo) => Array.isArray(lista) && lista.some((x) => casa(x, alvo));
+
+  const achados = produtos.filter((p) => {
+    if (g && !casa(p.grupo, g)) return false;
+    if (sg && !casaLista(p.subgrupos, sg)) return false;
+    if (esp && !casaLista(p.especificacoes, esp)) return false;
+    if (tx && !(norm(p.nome).includes(tx) || norm(p.descricao).includes(tx))) return false;
+    return true;
+  });
+
+  return {
+    total: achados.length,
+    produtos: achados.slice(0, 8).map((p) => ({
+      nome: p.nome,
+      preco: p.preco || "(sob consulta)",
+      descricao: (p.descricao || "").replace(/\s+/g, " ").slice(0, 140),
+      grupo: p.grupo,
+      subgrupos: p.subgrupos || [],
+      especificacoes: p.especificacoes || [],
+    })),
+  };
+}
+
 async function executarFuncao(nome, args) {
   if (nome === "consultar_taxa_entrega") {
     return await geo.consultarTaxaPorEndereco((args && args.endereco) || "");
+  }
+  if (nome === "buscar_produtos") {
+    return buscarProdutos(args || {});
   }
   if (nome === "encaminhar_para_atendente") {
     return { ok: true, instrucao: "Escreva uma mensagem curta e simpática avisando o cliente que você já vai chamar um atendente humano para continuar o atendimento por aqui." };
@@ -66,6 +118,7 @@ function montarContexto() {
   const dados = config.get();
   const n = dados.negocio;
   const g = (dados.entrega && dados.entrega.gratis) || {}; // regra de entrega grátis
+  const cat = dados.catalogo || {}; // catálogo (grupos/subgrupos/especificações/produtos)
 
   const extras = (dados.mensagensExtras || [])
     .map((x) => `- ${x.titulo}: ${(x.resposta || "").replace(/\n+/g, " ").replace(/\*/g, "")}`)
@@ -89,6 +142,11 @@ function montarContexto() {
     "SERVIÇOS E INFORMAÇÕES:",
     linhasServicos,
     "",
+    "CATÁLOGO DE PRODUTOS (consulte sempre com a função buscar_produtos — não invente itens):",
+    `- Grupos (categorias): ${(cat.grupos || []).join(", ") || "—"}`,
+    `- Subgrupos (para quem): ${(cat.subgrupos || []).join(", ") || "—"}`,
+    `- Especificações (idade/porte/linha): ${(cat.especificacoes || []).join(", ") || "—"}`,
+    "",
     dados.infoIA ? "CONHECIMENTO DO NEGÓCIO:\n" + dados.infoIA : "",
     "",
     "REGRAS:",
@@ -98,6 +156,13 @@ function montarContexto() {
     "- Banho e tosa PODEM ser agendados: peça os dados que faltam (nome do pet, porte, dia e horário).",
     "- A CONSULTA VETERINÁRIA NÃO é agendada — é por ORDEM DE CHEGADA, dentro do horário do veterinário (segunda a sexta das 8h às 17h, sábado das 8h às 12h). Não peça dia/horário para a consulta; oriente o cliente a comparecer dentro desse horário.",
     "- Quando precisar de um atendente humano (exames com guia, remédio com nome/receita/foto, fechar valor de pacote de cliente frequente, venda de aves/animais, reclamações, ou algo fora do seu conhecimento), CHAME a função encaminhar_para_atendente e avise o cliente que vai chamar alguém. Não invente que já resolveu.",
+    "",
+    "PRODUTOS / CATÁLOGO (vale para QUALQUER produto: ração, petisco, brinquedo, acessório, areia, cosmético...):",
+    "- Quando o cliente quiser um produto, faça um mini-questionário curto (UMA pergunta por vez) para descobrir o SUBGRUPO (ex.: 'É para cão ou gato?') e a ESPECIFICAÇÃO (ex.: 'É filhote ou adulto?', 'Qual o porte?', 'Tem alguma linha/necessidade especial?').",
+    "- Use só as opções que existem no CATÁLOGO acima (grupos/subgrupos/especificações). Quando tiver as respostas, CHAME a função buscar_produtos com grupo/subgrupo/especificacao.",
+    "- Apresente os produtos retornados de forma curta — nome e preço (ex.: '• Ração X Adulto — R$ 90'). Liste no máximo uns 5; se houver mais, diga que tem outras opções.",
+    "- Se buscar_produtos retornar 0 produtos, NÃO invente: diga que vai confirmar a disponibilidade com um atendente e CHAME encaminhar_para_atendente.",
+    "- Nunca invente produtos, marcas ou preços — use exclusivamente o que a função retornar.",
     "",
     "TAXA DE ENTREGA / TÁXI DOG:",
     "- Quando o cliente informar um ENDEREÇO, use a função consultar_taxa_entrega (não calcule distância sozinho).",
@@ -182,4 +247,4 @@ function limparHistorico(contactId) {
   historicos.delete(contactId);
 }
 
-module.exports = { responder, limparHistorico };
+module.exports = { responder, limparHistorico, buscarProdutos };
