@@ -493,6 +493,8 @@
             <h2>💬 Mensagens</h2>
             <p class="dica">Use <code>*texto*</code> para <b>negrito</b> no WhatsApp e Enter para pular linha.</p>
             <label>Saudação — linha 1</label><textarea id="m_saudacaoIntro"></textarea>
+            <label>Pergunta de nome (cliente novo)</label><textarea id="m_saudacaoNome"></textarea>
+            <p class="dica">Enviada a quem ainda não tem nome salvo. Quando ele responde, o bot guarda o nome e, nas próximas vezes, já saúda com ele (ex.: “Olá, Ana!”).</p>
             <label>Saudação — rodapé</label><textarea id="m_saudacaoRodape"></textarea>
             <label>Resposta ao pedir atendente humano</label><textarea id="m_atendente"></textarea>
 
@@ -967,8 +969,9 @@
       ["nome","tipo","endereco","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento"]
         .forEach(k => el("n_" + k).value = n[k] || "");
       el("n_infoIA").value = cfg.infoIA || "";
-      ["saudacaoIntro","saudacaoChamada","saudacaoRodape","atendente","ausencia"].forEach(k => el("m_" + k).value = m[k] || "");
+      ["saudacaoIntro","saudacaoChamada","saudacaoNome","saudacaoRodape","atendente","ausencia"].forEach(k => el("m_" + k).value = m[k] || "");
       if (!el("m_ausencia").value) el("m_ausencia").value = "🌙 Olá! No momento estamos fora do horário de atendimento. Assim que abrirmos, te respondemos por aqui. 🐾";
+      if (!el("m_saudacaoNome").value) el("m_saudacaoNome").value = "Olá! 🐾 Seja muito bem-vindo(a) à {nome}! Antes de começar, como posso te chamar? 😊";
       const padraoExp = { semana: { abre: "08:00", fecha: "19:00" }, sabado: { abre: "08:00", fecha: "18:00" }, domingo: { abre: "", fecha: "" } };
       el("exp_ativo").checked = cfg.expediente ? cfg.expediente.ativo === true : false;
       ["semana","sabado","domingo"].forEach(d => {
@@ -1015,7 +1018,7 @@
       ["nome","tipo","endereco","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento"]
         .forEach(k => novo.negocio[k] = el("n_" + k).value.trim());
       novo.negocio.logo = logoAtual;
-      ["saudacaoIntro","saudacaoChamada","saudacaoRodape","atendente","ausencia"].forEach(k => novo.mensagens[k] = el("m_" + k).value);
+      ["saudacaoIntro","saudacaoChamada","saudacaoNome","saudacaoRodape","atendente","ausencia"].forEach(k => novo.mensagens[k] = el("m_" + k).value);
       novo.expediente = {
         ativo: el("exp_ativo").checked,
         timezone: (cfg.expediente && cfg.expediente.timezone) || "America/Fortaleza",

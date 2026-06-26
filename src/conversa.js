@@ -1,7 +1,7 @@
 // Lógica de conversa do bot (triagem, menus, IA, handoff), separada do transporte de mensagens.
 // O envio é injetado via configurar(fn), onde fn(para, texto) entrega a mensagem (Cloud API).
 
-const { triar } = require("./triage");
+const { triar, menuPrincipal } = require("./triage");
 const { responder, limparHistorico, registrarTurno } = require("./ai");
 const config = require("./config");
 const clientes = require("./clientes");
@@ -40,6 +40,7 @@ const pausados = new Map(); // contactId -> { timer, ultimaMsg }
 const aguardandoFecho = new Map(); // contactId -> { timer }
 const menuContexto = new Map(); // contactId -> opções do menu atual
 const jaSaudou = new Set(); // contatos que já receberam o menu de saudação nesta conversa
+const aguardandoNome = new Set(); // contatos a quem o bot perguntou o nome e espera a resposta
 const ausenciaEnviada = new Map(); // contactId -> instante do último aviso de ausência
 const AUSENCIA_THROTTLE_MS = 60 * 60 * 1000; // não repete a ausência mais de 1x/h por contato
 
@@ -56,6 +57,22 @@ function ehFecho(t) {
   const n = normaliza(t);
   if (!n || n.length > 28) return false;
   return FECHO_PALAVRAS.some((p) => n === p || n.includes(p));
+}
+
+// Extrai o nome de uma resposta tipo "Ana", "meu nome é Ana", "sou a Ana Silva".
+// Retorna "" se não parecer um nome (ex.: uma pergunta) — aí o fluxo segue normal.
+function extrairNome(texto) {
+  if (!texto || /\?/.test(texto)) return ""; // pergunta não é nome
+  let t = String(texto).trim()
+    .replace(/^(meu nome (e|eh|é)|me chamo|pode me chamar de|sou (o|a)|sou|aqui (e|eh|é)|e|eh|é|nome:?)\s+/i, "")
+    .replace(/[^\p{L}\s'.-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const palavras = t.split(" ").filter(Boolean);
+  if (!palavras.length || palavras.length > 3) return "";
+  const nome = palavras.join(" ");
+  if (nome.length < 2 || nome.length > 40) return "";
+  return palavras.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
 
 // Verdadeiro se, AGORA, a loja está fora do horário de atendimento do bot.
@@ -112,6 +129,7 @@ async function finalizar(contactId, enviarDespedida) {
   aguardandoFecho.delete(contactId);
   menuContexto.delete(contactId);
   jaSaudou.delete(contactId); // conversa nova → pode saudar de novo
+  aguardandoNome.delete(contactId);
   limparHistorico(contactId);
   if (enviarDespedida) {
     try {
@@ -127,11 +145,6 @@ async function processar(from, texto, nomeWpp) {
   const dados = config.get();
   // Bot desligado no painel → não responde nada.
   if (!dados.botAtivo) return;
-
-  // 1º contato: guarda o telefone e o nome do perfil do WhatsApp (se ainda não tiver nome).
-  const conhecido = clientes.get(from);
-  if (!conhecido) clientes.salvar(from, { nome: nomeWpp });
-  else if (nomeWpp && !conhecido.nome) clientes.salvar(from, { nome: nomeWpp });
 
   // Fora do horário → só a mensagem de ausência (sem menu/saudação/IA), no máximo 1x/h.
   if (foraDoHorario(dados)) {
@@ -163,6 +176,21 @@ async function processar(from, texto, nomeWpp) {
     await finalizar(from, false); // trouxe algo novo → começa um atendimento novo
   }
 
+  // O bot perguntou o nome e o cliente respondeu → guarda e manda a saudação personalizada.
+  if (aguardandoNome.has(from)) {
+    aguardandoNome.delete(from);
+    const nome = extrairNome(texto);
+    if (nome) {
+      clientes.salvar(from, { nome });
+      jaSaudou.add(from);
+      const menu = menuPrincipal(nome);
+      menuContexto.set(from, { opcoes: config.intents(), texto: menu, sub: false });
+      await enviar(from, menu);
+      return;
+    }
+    // não parece um nome → segue o fluxo normal (não trava o atendimento)
+  }
+
   const ctx = menuContexto.get(from) || null;
   const r = triar(texto, ctx);
   if ("novoContexto" in r) {
@@ -172,8 +200,19 @@ async function processar(from, texto, nomeWpp) {
 
   // Menu de saudação aparece só UMA vez por conversa (no início). Depois disso, IA.
   if (r.saudacao) {
-    if (jaSaudou.has(from)) { r.tipo = "ia"; r.resposta = null; }
-    else jaSaudou.add(from);
+    if (jaSaudou.has(from)) {
+      r.tipo = "ia"; r.resposta = null;
+    } else {
+      jaSaudou.add(from);
+      const cli = clientes.get(from);
+      if (cli && cli.nome) {
+        r.resposta = menuPrincipal(cli.nome); // já conhece → "Olá, Ana!" personalizado
+      } else {
+        aguardandoNome.add(from); // cliente novo → pergunta o nome antes do menu
+        menuContexto.delete(from);
+        r.resposta = config.preencher(dados.mensagens.saudacaoNome || "Olá! 🐾 Seja muito bem-vindo(a) à {nome}! Antes de começar, como posso te chamar? 😊");
+      }
+    }
   }
 
   if (r.tipo === "atendente") {
