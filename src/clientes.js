@@ -35,6 +35,7 @@ function get(telefone) {
 function salvar(telefone, dados = {}) {
   if (!telefone) return null;
   const atual = clientes[telefone] || { telefone, criadoEm: Date.now() };
+  if (!atual.etapa) atual.etapa = "lead"; // todo cliente novo entra como lead no funil
   if (dados.nome != null && String(dados.nome).trim()) atual.nome = String(dados.nome).trim();
   if (dados.endereco != null && String(dados.endereco).trim()) atual.endereco = String(dados.endereco).trim();
   atual.telefone = telefone;
@@ -48,6 +49,7 @@ function salvar(telefone, dados = {}) {
 function salvarPet(telefone, { nome, raca } = {}) {
   if (!telefone || !nome || !String(nome).trim()) return null;
   const atual = clientes[telefone] || { telefone, criadoEm: Date.now() };
+  if (!atual.etapa) atual.etapa = "lead";
   if (!Array.isArray(atual.pets)) atual.pets = [];
   const n = String(nome).trim();
   const existente = atual.pets.find((p) => (p.nome || "").toLowerCase() === n.toLowerCase());
@@ -67,9 +69,12 @@ function salvarPet(telefone, { nome, raca } = {}) {
 function definir(telefone, dados = {}) {
   if (!telefone) return null;
   const atual = clientes[telefone] || { telefone, criadoEm: Date.now() };
-  ["nome", "endereco"].forEach((k) => {
+  ["nome", "endereco", "notas", "etapa"].forEach((k) => {
     if (dados[k] != null) atual[k] = String(dados[k]).trim();
   });
+  if (Array.isArray(dados.tags)) {
+    atual.tags = dados.tags.map((t) => String(t).trim()).filter(Boolean);
+  }
   if (Array.isArray(dados.pets)) {
     atual.pets = dados.pets
       .filter((p) => p && String(p.nome || "").trim())

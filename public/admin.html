@@ -649,8 +649,16 @@
           <p class="dica">A memória do bot: nome, telefone e endereço de cada cliente. O bot preenche sozinho durante as conversas e reusa depois (ex.: já calcula a entrega sem pedir o endereço de novo).</p>
           <div class="cat-topo">
             <input class="busca" id="cliBusca" placeholder="🔎 Buscar (nome ou telefone)..." oninput="cliPagina=1;renderClientes()" />
+            <select class="cat-filtro" id="cliEtapaFiltro" onchange="cliPagina=1;renderClientes()">
+              <option value="">Todas as etapas</option>
+              <option value="lead">🆕 Lead</option>
+              <option value="negociando">💬 Em atendimento</option>
+              <option value="cliente">✅ Cliente</option>
+              <option value="perdido">❌ Perdido</option>
+            </select>
             <button class="btn-primary" onclick="abrirCliente()">+ Adicionar cliente</button>
           </div>
+          <div id="cliFunil" style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px"></div>
           <div id="listaClientes"></div>
           <div id="cliPager" class="catpager"></div>
         </section>
@@ -662,6 +670,15 @@
             <label>Telefone (com DDD, só números — ex.: 5585999999999)</label><input type="text" id="cliTelefone" />
             <label>Endereço</label><textarea id="cliEndereco"></textarea>
             <label>Pets (um por linha — Nome, Raça)</label><textarea id="cliPets" placeholder="Belinha, Poodle&#10;Rex, Vira-lata"></textarea>
+            <label>Etapa do funil</label>
+            <select id="cliEtapa">
+              <option value="lead">🆕 Lead</option>
+              <option value="negociando">💬 Em atendimento</option>
+              <option value="cliente">✅ Cliente</option>
+              <option value="perdido">❌ Perdido</option>
+            </select>
+            <label>Tags (separadas por vírgula)</label><input type="text" id="cliTags" placeholder="vip, atacado, ração premium" />
+            <label>Anotações internas (só você vê — o bot não usa)</label><textarea id="cliNotas" placeholder="Observações sobre o cliente..."></textarea>
             <div class="modal-acoes">
               <button class="btn-sec" onclick="fecharCliente()">Cancelar</button>
               <button class="btn-primary" onclick="salvarCliente()">Salvar</button>
@@ -1277,34 +1294,59 @@
       return `<div class="pg-info">${qtd} ${rotulo} · página ${atual} de ${total}</div><div class="pager">${botoes}</div>`;
     }
 
-    // ===== Clientes (memória do bot) =====
+    // ===== Clientes (memória do bot + funil/tags/anotações) =====
     let clientesLista = [], cliPagina = 1, cliEditTel = null;
+    const ETAPAS = {
+      lead: { rot: "🆕 Lead", cor: "#2563eb", bg: "#dbeafe" },
+      negociando: { rot: "💬 Em atendimento", cor: "#ea580c", bg: "#ffedd5" },
+      cliente: { rot: "✅ Cliente", cor: "#16a34a", bg: "#dcfce7" },
+      perdido: { rot: "❌ Perdido", cor: "#dc2626", bg: "#fee2e2" },
+    };
+    function etapaInfo(e) { return ETAPAS[e] || ETAPAS.lead; }
     async function carregarClientes() {
       try { const d = await (await fetch("/api/clientes")).json(); clientesLista = d.clientes || []; renderClientes(); }
       catch (_) { el("listaClientes").innerHTML = '<p class="dica">Erro ao carregar clientes.</p>'; }
     }
     function cliIrPagina(n) { cliPagina = n; renderClientes(); const c = el("listaClientes"); if (c) c.scrollIntoView({ block: "start" }); }
+    function renderFunil() {
+      const cont = {}; Object.keys(ETAPAS).forEach(k => cont[k] = 0);
+      clientesLista.forEach(c => { const e = ETAPAS[c.etapa] ? c.etapa : "lead"; cont[e]++; });
+      el("cliFunil").innerHTML = Object.keys(ETAPAS).map(k => {
+        const i = ETAPAS[k];
+        return `<span style="background:${i.bg};color:${i.cor};font-weight:700;font-size:12px;padding:5px 10px;border-radius:8px">${i.rot}: ${cont[k]}</span>`;
+      }).join("");
+    }
     function renderClientes() {
+      renderFunil();
       const q = normCat(el("cliBusca").value);
-      const lista = clientesLista.filter(c => !q || normCat((c.nome || "") + " " + (c.telefone || "") + " " + (c.endereco || "")).includes(q));
+      const fEtapa = el("cliEtapaFiltro") ? el("cliEtapaFiltro").value : "";
+      const lista = clientesLista.filter(c => {
+        if (fEtapa && (c.etapa || "lead") !== fEtapa) return false;
+        return !q || normCat((c.nome || "") + " " + (c.telefone || "") + " " + (c.endereco || "") + " " + (c.tags || []).join(" ")).includes(q);
+      });
       if (!lista.length) { el("listaClientes").innerHTML = `<p class="dica">${clientesLista.length ? "Nenhum cliente encontrado." : "Nenhum cliente ainda — o bot vai preenchendo conforme conversa."}</p>`; el("cliPager").innerHTML = ""; return; }
       const POR = 10, total = lista.length, totalPags = Math.ceil(total / POR);
       cliPagina = Math.min(Math.max(1, cliPagina), totalPags || 1);
       const ini = (cliPagina - 1) * POR;
-      el("listaClientes").innerHTML = lista.slice(ini, ini + POR).map(c => `
+      el("listaClientes").innerHTML = lista.slice(ini, ini + POR).map(c => {
+        const et = etapaInfo(c.etapa);
+        return `
         <div class="prod">
           <div class="semimg">👤</div>
           <div class="pinfo">
-            <div class="pnome">${esc(c.nome || "(sem nome)")}</div>
+            <div class="pnome">${esc(c.nome || "(sem nome)")} <span style="background:${et.bg};color:${et.cor};font-size:11px;font-weight:700;padding:2px 7px;border-radius:7px">${et.rot}</span></div>
             <div class="pcod" style="font-size:12px;color:var(--suave);font-weight:600">📞 ${esc(c.telefone || "")}</div>
             <div class="pdesc">📍 ${esc(c.endereco || "(sem endereço)")}</div>
             ${(c.pets && c.pets.length) ? `<div class="pdesc">🐾 ${c.pets.map(p => esc(p.nome) + (p.raca ? " (" + esc(p.raca) + ")" : "")).join(", ")}</div>` : ""}
+            ${(c.tags && c.tags.length) ? `<div class="chips" style="margin-top:4px">${c.tags.map(t => `<span class="chipg">${esc(t)}</span>`).join("")}</div>` : ""}
+            ${c.notas ? `<div class="pdesc" style="color:var(--suave);font-style:italic">📝 ${esc(c.notas)}</div>` : ""}
           </div>
           <div class="pacoes">
             <button class="iconbtn" title="Editar" onclick="abrirCliente('${esc(c.telefone)}')">✏️</button>
             <button class="iconbtn del" title="Excluir" onclick="excluirCliente('${esc(c.telefone)}')">🗑️</button>
           </div>
-        </div>`).join("");
+        </div>`;
+      }).join("");
       el("cliPager").innerHTML = montarPager(cliPagina, totalPags, total, "cliIrPagina", "clientes");
     }
     function abrirCliente(tel) {
@@ -1316,6 +1358,9 @@
       el("cliTelefone").disabled = !!c; // telefone é a chave: não muda na edição
       el("cliEndereco").value = c ? (c.endereco || "") : "";
       el("cliPets").value = c && Array.isArray(c.pets) ? c.pets.map(p => p.nome + (p.raca ? ", " + p.raca : "")).join("\n") : "";
+      el("cliEtapa").value = (c && c.etapa) || "lead";
+      el("cliTags").value = c && Array.isArray(c.tags) ? c.tags.join(", ") : "";
+      el("cliNotas").value = (c && c.notas) || "";
       el("modalCliente").classList.add("aberto");
     }
     function fecharCliente() { el("modalCliente").classList.remove("aberto"); }
@@ -1326,8 +1371,9 @@
         const p = l.split(/[,\-–|]/).map(s => s.trim());
         return { nome: p[0], raca: p.slice(1).join(" ").trim() };
       }).filter(p => p.nome);
+      const tags = el("cliTags").value.split(",").map(t => t.trim()).filter(Boolean);
       try {
-        await apiCat("/api/clientes", { telefone, nome: el("cliNome").value.trim(), endereco: el("cliEndereco").value.trim(), pets });
+        await apiCat("/api/clientes", { telefone, nome: el("cliNome").value.trim(), endereco: el("cliEndereco").value.trim(), pets, tags, notas: el("cliNotas").value.trim(), etapa: el("cliEtapa").value });
         fecharCliente(); await carregarClientes();
       } catch (e) { alert("Erro ao salvar: " + e.message); }
     }
