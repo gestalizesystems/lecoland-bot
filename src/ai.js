@@ -338,4 +338,24 @@ async function resumirConversa(mensagens, motivo) {
   }
 }
 
-module.exports = { responder, limparHistorico, registrarTurno, buscarProdutos, resumirConversa };
+// Transcreve um áudio (base64) em texto, usando o Gemini (multimodal).
+async function transcreverAudio(base64, mimeType) {
+  try {
+    const cfg = { maxOutputTokens: 600, temperature: 0 };
+    if (MODELO.includes("2.5")) cfg.thinkingConfig = { thinkingBudget: 0 };
+    const resp = await ai.models.generateContent({
+      model: MODELO,
+      contents: [{ role: "user", parts: [
+        { text: "Transcreva este áudio em português, exatamente o que a pessoa falou. Responda apenas com a transcrição, sem comentários nem aspas." },
+        { inlineData: { mimeType: String(mimeType || "audio/ogg").split(";")[0].trim(), data: base64 } },
+      ] }],
+      config: cfg,
+    });
+    return (resp.text || "").trim();
+  } catch (e) {
+    console.error("Falha ao transcrever áudio:", e.message);
+    return "";
+  }
+}
+
+module.exports = { responder, limparHistorico, registrarTurno, buscarProdutos, resumirConversa, transcreverAudio };

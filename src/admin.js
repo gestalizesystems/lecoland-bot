@@ -12,8 +12,25 @@ const conversa = require("./conversa");
 const clientes = require("./clientes");
 const nps = require("./nps");
 const atendimentos = require("./atendimentos");
+const wa = require("./wa");
+const ai = require("./ai");
 
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
+
+// Baixa o áudio recebido, transcreve com a IA e processa como se fosse texto.
+async function processarAudio(from, mediaId, nomeWpp) {
+  try {
+    const { buffer, mimeType } = await wa.baixarMidia(mediaId);
+    const texto = await ai.transcreverAudio(buffer.toString("base64"), mimeType);
+    if (texto && texto.trim()) {
+      await conversa.processar(from, texto.trim(), nomeWpp);
+    } else {
+      try { await wa.enviarTexto(from, "Desculpa, não consegui entender o áudio 🙏 Pode me mandar por texto?"); } catch (_) {}
+    }
+  } catch (e) {
+    console.error("Falha ao processar áudio:", e.message);
+  }
+}
 // Em produção (Railway) as imagens vão para o Volume persistente; local usa public/uploads.
 const UPLOAD_DIR = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "uploads") : path.join(PUBLIC_DIR, "uploads");
 
@@ -166,9 +183,12 @@ function iniciarAdmin(porta) {
           const nomes = {};
           for (const ct of val.contacts || []) if (ct.wa_id) nomes[ct.wa_id] = ct.profile && ct.profile.name;
           for (const msg of val.messages || []) {
-            if (msg.type !== "text" || !msg.text) continue;
             const nomeWpp = nomes[msg.from] || Object.values(nomes)[0]; // nome do perfil do WhatsApp
-            conversa.processar(msg.from, msg.text.body || "", nomeWpp).catch((e) => console.error("Erro ao processar mensagem:", e.message));
+            if (msg.type === "text" && msg.text) {
+              conversa.processar(msg.from, msg.text.body || "", nomeWpp).catch((e) => console.error("Erro ao processar mensagem:", e.message));
+            } else if (msg.type === "audio" && msg.audio && msg.audio.id) {
+              processarAudio(msg.from, msg.audio.id, nomeWpp).catch((e) => console.error("Erro no áudio:", e.message));
+            }
           }
         }
       }
