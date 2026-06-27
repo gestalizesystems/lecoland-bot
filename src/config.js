@@ -98,6 +98,19 @@ function migrar(d) {
       d._catalogoVendidos = true; mudou = true;
     } catch (_) { /* sem a lista de vendidos — não filtra */ }
   }
+  // Catálogo: atualiza preços e desativa estoque 0 / N/D (data/precos-estoque.json).
+  if (!d._precosEstoque) {
+    try {
+      const mapa = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "precos-estoque.json"), "utf8"));
+      ((d.catalogo && d.catalogo.produtos) || []).forEach((p) => {
+        const u = mapa[String(p.codigo || "").trim()];
+        if (!u) return;
+        if (u.preco) p.preco = u.preco;
+        if (u.inativar) p.ativo = false;
+      });
+      d._precosEstoque = true; mudou = true;
+    } catch (_) { /* sem a tabela de preços/estoque — não altera */ }
+  }
   return mudou;
 }
 
