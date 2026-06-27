@@ -319,4 +319,23 @@ function limparHistorico(contactId) {
   historicos.delete(contactId);
 }
 
-module.exports = { responder, limparHistorico, registrarTurno, buscarProdutos };
+// Resumo curto da conversa pro atendente assumir rápido (usado no handoff).
+async function resumirConversa(mensagens, motivo) {
+  const linhas = (mensagens || []).filter(Boolean).map((m) => `- ${m}`).join("\n");
+  if (!linhas) return motivo || "Cliente pediu atendimento humano.";
+  const prompt =
+    "Você ajuda um atendente de pet shop a assumir uma conversa do WhatsApp. " +
+    "Resuma em no máximo 2 frases curtas e diretas (em português, sem saudação) o que o cliente quer e em que ponto está.\n\n" +
+    "Mensagens do cliente:\n" + linhas + (motivo ? "\n\nMotivo do encaminhamento: " + motivo : "");
+  try {
+    const cfg = { maxOutputTokens: 200, temperature: 0.2 };
+    if (MODELO.includes("2.5")) cfg.thinkingConfig = { thinkingBudget: 0 };
+    const resp = await ai.models.generateContent({ model: MODELO, contents: [{ role: "user", parts: [{ text: prompt }] }], config: cfg });
+    return (resp.text || "").trim() || (motivo || "Cliente pediu atendimento humano.");
+  } catch (e) {
+    console.error("Falha ao resumir conversa:", e.message);
+    return motivo || "Cliente pediu atendimento humano.";
+  }
+}
+
+module.exports = { responder, limparHistorico, registrarTurno, buscarProdutos, resumirConversa };

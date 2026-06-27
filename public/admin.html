@@ -61,6 +61,7 @@
     .nav-item .ic { width: 18px; text-align: center; }
     .nav-item:hover { background: rgba(31,58,95,.10); }
     .nav-item.active { background: var(--azul-logo); color: #fff; }
+    .nav-badge { margin-left: auto; background: #dc2626; color: #fff; font-size: 11px; font-weight: 800; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
 
     .side-foot { padding: 14px 10px 4px; border-top: 1px solid rgba(31,58,95,.18); }
     .side-foot .nome { font-weight: 700; font-size: 14px; }
@@ -382,6 +383,7 @@
 
       <nav class="nav" id="nav">
         <a class="nav-item active" data-target="page-dashboard" data-titulo="Dashboard" data-sub="Resumo do seu atendimento automatizado."><span class="ic">📊</span> Dashboard</a>
+        <a class="nav-item" data-target="page-atendimentos" data-titulo="Atendimentos" data-sub="Clientes esperando um atendente humano, com o resumo da conversa."><span class="ic">🔔</span> Atendimentos <span id="navAtBadge" class="nav-badge" style="display:none"></span></a>
         <a class="nav-item" data-target="page-negocio" data-titulo="Dados do negócio" data-sub="Informações que aparecem nas respostas do bot."><span class="ic">🏪</span> Dados do negócio</a>
         <a class="nav-item" data-target="page-mensagens" data-titulo="Mensagens" data-sub="Personalize as mensagens que o bot envia."><span class="ic">💬</span> Mensagens</a>
         <a class="nav-item" data-target="page-opcoes" data-titulo="Menus" data-sub="Menu de saudação (enviado com a saudação) e sub-menus por palavra-chave."><span class="ic">🗂️</span> Menus</a>
@@ -474,6 +476,12 @@
             <div id="dashNps"></div>
           </div>
         </div>
+
+        <section class="card page" id="page-atendimentos">
+          <h2>🔔 Atendimentos aguardando</h2>
+          <p class="dica">Clientes que o bot encaminhou para um humano. Cada um vem com um <b>resumo da conversa feito pela IA</b>, pra você assumir rápido. Responda pelo WhatsApp e clique em “Atendido”.</p>
+          <div id="listaAtendimentos"></div>
+        </section>
 
         <section class="card page" id="page-negocio">
           <h2>🏪 Dados do negócio</h2>
@@ -796,6 +804,7 @@
       }
       if (id === "page-clientes") carregarClientes();
       if (id === "page-satisfacao") carregarSatisfacao();
+      if (id === "page-atendimentos") carregarAtendimentos();
       window.scrollTo(0, 0);
       fecharMenu(); // fecha a gaveta no mobile ao trocar de página
     }
@@ -1373,6 +1382,48 @@
         </div>`).join("");
       el("npsPager").innerHTML = montarPager(npsPagina, totalPags, total, "satIrPagina", "avaliações");
     }
+
+    // ===== Atendimentos (fila de handoff com resumo da IA) =====
+    let atendimentosPend = [];
+    function tempoRel(ms) {
+      const s = Math.floor((Date.now() - ms) / 1000);
+      if (s < 60) return "agora";
+      const m = Math.floor(s / 60); if (m < 60) return m + " min";
+      const h = Math.floor(m / 60); if (h < 24) return h + "h";
+      return Math.floor(h / 24) + "d";
+    }
+    function pintarBadgeAtendimentos() {
+      const b = el("navAtBadge"); if (!b) return;
+      const n = atendimentosPend.length;
+      b.textContent = n; b.style.display = n ? "inline-flex" : "none";
+    }
+    async function carregarAtendimentos() {
+      try { const d = await (await fetch("/api/atendimentos")).json(); atendimentosPend = d.pendentes || []; }
+      catch (_) { atendimentosPend = []; }
+      pintarBadgeAtendimentos(); renderAtendimentos();
+    }
+    function renderAtendimentos() {
+      const c = el("listaAtendimentos"); if (!c) return;
+      if (!atendimentosPend.length) { c.innerHTML = '<p class="dica">Nenhum cliente aguardando atendimento. 🎉</p>'; return; }
+      c.innerHTML = atendimentosPend.map(a => `
+        <div class="prod" style="align-items:flex-start">
+          <div class="semimg" style="background:#fee2e2">🔔</div>
+          <div class="pinfo">
+            <div class="pnome">${esc(a.nome || "(sem nome)")} <span style="font-size:12px;color:var(--suave);font-weight:600">📞 ${esc(a.telefone)} · há ${tempoRel(a.atualizadoEm)}</span></div>
+            <div class="pdesc" style="color:#334155">📝 ${esc(a.resumo || a.motivo || "")}</div>
+          </div>
+          <div class="pacoes">
+            <a class="iconbtn" title="Abrir no WhatsApp" href="https://wa.me/${esc(a.telefone)}" target="_blank">💬</a>
+            <button class="btn-primary" style="padding:7px 12px;white-space:nowrap" onclick="resolverAtendimento('${a.id}')">✓ Atendido</button>
+          </div>
+        </div>`).join("");
+    }
+    async function resolverAtendimento(id) {
+      try { const d = await (await fetch("/api/atendimentos/resolver", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json(); atendimentosPend = d.pendentes || []; }
+      catch (_) {}
+      pintarBadgeAtendimentos(); renderAtendimentos();
+    }
+
     function renderTaxLista(tipo, alvo) {
       el(alvo).innerHTML = (catalogo[tipo] || []).map((v, i) =>
         `<span class="tax-item">${esc(v)}<button title="Excluir" onclick="removerTax('${tipo}', ${i})">×</button></span>`
@@ -1517,6 +1568,8 @@
     carregarConta();
     carregarBot();
     setInterval(carregarBot, 15000); // mantém o status de conexão atualizado
+    carregarAtendimentos(); // fila de handoff + badge
+    setInterval(carregarAtendimentos, 20000);
   </script>
 </body>
 </html>

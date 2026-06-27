@@ -2,10 +2,11 @@
 // O envio é injetado via configurar(fn), onde fn(para, texto) entrega a mensagem (Cloud API).
 
 const { triar, menuPrincipal } = require("./triage");
-const { responder, limparHistorico, registrarTurno } = require("./ai");
+const { responder, limparHistorico, registrarTurno, resumirConversa } = require("./ai");
 const config = require("./config");
 const clientes = require("./clientes");
 const nps = require("./nps");
+const atendimentos = require("./atendimentos");
 
 let enviar = async () => {}; // texto — definido pelo ponto de entrada (Cloud API)
 let enviarImagem = async () => {}; // imagem (link + legenda)
@@ -44,6 +45,7 @@ const jaSaudou = new Set(); // contatos que já receberam o menu de saudação n
 const aguardandoNome = new Set(); // contatos a quem o bot perguntou o nome e espera a resposta
 const aguardandoNps = new Set(); // contatos a quem o bot perguntou a nota (NPS) e espera a resposta
 const aguardandoNpsComentario = new Map(); // contactId -> { id, detrator } esperando o comentário do NPS
+const historicoConversa = new Map(); // contactId -> [últimas mensagens do cliente] (pro resumo do handoff)
 const ausenciaEnviada = new Map(); // contactId -> instante do último aviso de ausência
 const AUSENCIA_THROTTLE_MS = 60 * 60 * 1000; // não repete a ausência mais de 1x/h por contato
 
@@ -97,6 +99,19 @@ async function encerrarComNps(from, msgPadrao) {
     await enviar(from, `${msgPadrao}\n\n${nm}0 a 10, o quanto você recomendaria a *${nomeLoja}* a um amigo? 🐾`);
   } else {
     await enviar(from, msgPadrao);
+  }
+}
+
+// Abre um atendimento na fila do painel com um RESUMO da conversa feito pela IA (handoff).
+async function abrirHandoff(from, motivo) {
+  try {
+    const msgs = (historicoConversa.get(from) || []).slice(-15);
+    const cli = clientes.get(from);
+    const resumo = await resumirConversa(msgs, motivo);
+    atendimentos.registrar({ telefone: from, nome: (cli && cli.nome) || "", resumo, motivo });
+  } catch (e) {
+    console.error("Falha ao abrir handoff:", e.message);
+    atendimentos.registrar({ telefone: from, motivo });
   }
 }
 
@@ -157,6 +172,8 @@ async function finalizar(contactId, enviarDespedida) {
   aguardandoNome.delete(contactId);
   aguardandoNps.delete(contactId);
   aguardandoNpsComentario.delete(contactId);
+  historicoConversa.delete(contactId);
+  atendimentos.resolver(contactId); // conversa encerrada → tira da fila de atendimentos
   limparHistorico(contactId);
   if (enviarDespedida) {
     try {
@@ -172,6 +189,14 @@ async function processar(from, texto, nomeWpp) {
   const dados = config.get();
   // Bot desligado no painel → não responde nada.
   if (!dados.botAtivo) return;
+
+  // Guarda as últimas mensagens do cliente (em memória) pra montar o resumo no handoff.
+  if (texto && String(texto).trim()) {
+    const buf = historicoConversa.get(from) || [];
+    buf.push(String(texto).trim());
+    if (buf.length > 20) buf.splice(0, buf.length - 20);
+    historicoConversa.set(from, buf);
+  }
 
   // NPS — passo 1: cliente manda a nota 0–10 → registra e pede um comentário.
   if (aguardandoNps.has(from)) {
@@ -198,6 +223,7 @@ async function processar(from, texto, nomeWpp) {
     if (detrator) {
       await enviar(from, "Obrigada por compartilhar! 🐾 Vou repassar pra um atendente cuidar disso pra você.");
       pausar(from); // ouvir o detrator
+      await abrirHandoff(from, "Cliente deu nota baixa no NPS (detrator)" + (pular ? "." : ": " + String(texto).trim()));
     } else {
       await enviar(from, "Valeu pela avaliação! 💛 Significa muito pra gente. 🐾");
     }
@@ -283,6 +309,7 @@ async function processar(from, texto, nomeWpp) {
   if (r.tipo === "atendente") {
     await enviar(from, r.resposta);
     pausar(from);
+    await abrirHandoff(from, "Cliente pediu para falar com um atendente.");
     return;
   }
 
@@ -308,7 +335,10 @@ async function processar(from, texto, nomeWpp) {
   // tipo === "ia": pergunta livre.
   const resp = await responder(from, texto);
   await enviar(from, resp.texto);
-  if (resp.encaminhar) pausar(from); // a IA pediu um atendente humano
+  if (resp.encaminhar) { // a IA pediu um atendente humano
+    pausar(from);
+    await abrirHandoff(from, resp.motivo || "A IA encaminhou para um atendente.");
+  }
   if (resp.produtos && resp.produtos.length) await enviarProdutos(from, resp.produtos); // catálogo com foto
 }
 

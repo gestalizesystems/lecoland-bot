@@ -11,6 +11,7 @@ const estado = require("./estado");
 const conversa = require("./conversa");
 const clientes = require("./clientes");
 const nps = require("./nps");
+const atendimentos = require("./atendimentos");
 
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 // Em produção (Railway) as imagens vão para o Volume persistente; local usa public/uploads.
@@ -323,6 +324,15 @@ function iniciarAdmin(porta) {
       return { id: r.id, telefone: r.telefone, nome: (cli && cli.nome) || "", nota: r.nota, comentario: r.comentario || "", data: r.data };
     });
     res.json({ ok: true, resumo: nps.resumo(desde), respostas });
+  });
+
+  // ---- Atendimentos (fila de handoff com resumo da IA) ----
+  app.get("/api/atendimentos", (req, res) => {
+    res.json({ ok: true, pendentes: atendimentos.pendentes() });
+  });
+  app.post("/api/atendimentos/resolver", (req, res) => {
+    atendimentos.resolver((req.body && req.body.id) || "");
+    res.json({ ok: true, pendentes: atendimentos.pendentes() });
   });
 
   app.post("/api/clientes/remover", (req, res) => {
