@@ -106,6 +106,19 @@ async function encerrarComNps(from, msgPadrao) {
   }
 }
 
+// Convida o cliente a seguir no Instagram e avaliar no Google (vai junto com o NPS, 1x/7 dias).
+async function enviarConviteRedes(from) {
+  const n = config.get().negocio || {};
+  const insta = String(n.instagram || "").trim();
+  const google = String(n.googleReview || "").trim();
+  if (!insta && !google) return;
+  let msg = "🌟 Se curtiu nosso atendimento, dá uma força pra gente:";
+  if (insta) msg += `\n\n📸 Siga no Instagram: ${insta}`;
+  if (google) msg += `\n⭐ Avalie no Google: ${google}`;
+  msg += "\n\nMuito obrigada! 🐾";
+  try { await enviar(from, msg); } catch (e) { console.error("Falha no convite redes:", e.message); }
+}
+
 // Abre um atendimento na fila do painel com um RESUMO da conversa feito pela IA (handoff).
 async function abrirHandoff(from, motivo) {
   metricas.inc("handoff"); // métrica: transferência para humano
@@ -233,6 +246,7 @@ async function processar(from, texto, nomeWpp) {
       await abrirHandoff(from, "Cliente deu nota baixa no NPS (detrator)" + (pular ? "." : ": " + String(texto).trim()));
     } else {
       await enviar(from, "Valeu pela avaliação! 💛 Significa muito pra gente. 🐾");
+      await enviarConviteRedes(from); // só p/ quem gostou (promotores/neutros): segue no Insta + avalia no Google
     }
     return;
   }

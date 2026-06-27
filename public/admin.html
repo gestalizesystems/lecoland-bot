@@ -482,6 +482,7 @@
           <h2>🔔 Atendimentos aguardando</h2>
           <p class="dica">Clientes que o bot encaminhou para um humano. Cada um vem com um <b>resumo da conversa feito pela IA</b>, pra você assumir rápido. Responda pelo WhatsApp e clique em “Atendido”.</p>
           <div id="listaAtendimentos"></div>
+          <div id="atPager" class="catpager"></div>
         </section>
 
         <section class="card page" id="page-negocio">
@@ -494,12 +495,15 @@
             <div><label>Tipo (ex.: Pet Shop e Clínica Veterinária)</label><input type="text" id="n_tipo" /></div>
             <div><label>Endereço</label><input type="text" id="n_endereco" /></div>
             <div><label>Link do Google Maps</label><input type="text" id="n_mapsLink" placeholder="https://maps.app.goo.gl/..." /></div>
-            <div><label>Telefone</label><input type="text" id="n_telefone" /></div>
+            <div><label>Telefone</label><input type="text" id="n_telefone" oninput="mascaraTel(this)" placeholder="(85) 99999-9999" /></div>
             <div><label>Horário (segunda a sexta)</label><input type="text" id="n_horarioSemana" /></div>
             <div><label>Horário (sábado)</label><input type="text" id="n_horarioSabado" /></div>
             <div><label>Horário (domingo/feriados)</label><input type="text" id="n_horarioDomingo" /></div>
             <div><label>Formas de pagamento</label><input type="text" id="n_pagamento" /></div>
+            <div><label>📸 Link do Instagram</label><input type="text" id="n_instagram" placeholder="https://instagram.com/lecolandpet" /></div>
+            <div><label>⭐ Link de avaliação no Google</label><input type="text" id="n_googleReview" placeholder="https://g.page/r/.../review" /></div>
           </div>
+          <p class="dica" style="margin-top:-4px">📸⭐ Esses dois links o bot envia ao cliente junto com a pesquisa de satisfação (no máx. 1x a cada 7 dias).</p>
           <label style="margin-top:18px;">🧠 Sobre o negócio (para a IA responder melhor)</label>
           <p class="dica">Tudo que você escrever aqui o bot usa para responder perguntas livres (políticas, filial, vacinas, regras, diferenciais...). Quanto mais detalhado, melhor.</p>
           <textarea id="n_infoIA" style="min-height:220px;"></textarea>
@@ -668,7 +672,7 @@
           <div class="modal">
             <h3 id="cliModalTitulo" style="margin:0 0 16px">Cliente</h3>
             <label>Nome</label><input type="text" id="cliNome" />
-            <label>Telefone (com DDD, só números — ex.: 5585999999999)</label><input type="text" id="cliTelefone" />
+            <label>Telefone (com DDD, só números — ex.: 5585999999999)</label><input type="text" id="cliTelefone" oninput="mascaraTel(this)" />
             <label>Endereço</label><textarea id="cliEndereco"></textarea>
             <label>Pets (um por linha — Nome, Raça)</label><textarea id="cliPets" placeholder="Belinha, Poodle&#10;Rex, Vira-lata"></textarea>
             <label>Etapa do funil</label>
@@ -767,7 +771,7 @@
           <p class="dica">Dados de acesso ao painel. A senha nunca é exibida.</p>
           <div class="grid-2">
             <div><label>Nome de usuário</label><input type="text" id="ct_nomeUsuario" /></div>
-            <div><label>Telefone</label><input type="text" id="ct_telefone" /></div>
+            <div><label>Telefone</label><input type="text" id="ct_telefone" oninput="mascaraTel(this)" placeholder="(85) 99999-9999" /></div>
             <div><label>E-mail (login)</label><input type="text" id="ct_email" /></div>
             <div><label>Senha</label><input type="text" value="••••••••" disabled /></div>
           </div>
@@ -812,6 +816,21 @@
     }
     function listaParaTexto(arr) { return (arr || []).join(", "); }
     function textoParaLista(t) { return (t || "").split(",").map(s => s.trim()).filter(Boolean); }
+    // ===== Máscaras (telefone BR e CEP) — formatam o que aparece; o valor é limpo ao salvar =====
+    function mascaraTel(elx) {
+      let v = elx.value.replace(/\D/g, "").slice(0, 13), ddi = "", resto = v;
+      if (v.length > 11 && v.startsWith("55")) { ddi = "+55 "; resto = v.slice(2); }
+      let r = "";
+      if (resto.length > 10) r = "(" + resto.slice(0, 2) + ") " + resto.slice(2, 7) + "-" + resto.slice(7, 11);
+      else if (resto.length > 6) r = "(" + resto.slice(0, 2) + ") " + resto.slice(2, resto.length - 4) + "-" + resto.slice(resto.length - 4);
+      else if (resto.length > 2) r = "(" + resto.slice(0, 2) + ") " + resto.slice(2);
+      else if (resto.length) r = "(" + resto;
+      elx.value = ddi + r;
+    }
+    function mascaraCep(elx) {
+      const v = elx.value.replace(/\D/g, "").slice(0, 8);
+      elx.value = v.length > 5 ? v.slice(0, 5) + "-" + v.slice(5) : v;
+    }
     function flash(msg, cls) { const s = el("status"); s.textContent = msg; s.className = cls || ""; if (cls === "ok") setTimeout(() => { if (s.className === "ok") s.textContent = ""; }, 5000); }
 
     // ===== Logo =====
@@ -1012,7 +1031,7 @@
       const n = cfg.negocio, m = cfg.mensagens, e = cfg.entrega;
       el("hNome").textContent = n.nome; el("botNome").textContent = n.nome;
       logoAtual = n.logo || ""; setLogo(logoAtual);
-      ["nome","tipo","endereco","mapsLink","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento"]
+      ["nome","tipo","endereco","mapsLink","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento","instagram","googleReview"]
         .forEach(k => el("n_" + k).value = n[k] || "");
       el("n_infoIA").value = cfg.infoIA || "";
       ["saudacaoIntro","saudacaoChamada","saudacaoNome","saudacaoRodape","atendente","ausencia"].forEach(k => el("m_" + k).value = m[k] || "");
@@ -1060,7 +1079,7 @@
         infoIA: el("n_infoIA").value,
         menus: coletarMenus(),
       };
-      ["nome","tipo","endereco","mapsLink","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento"]
+      ["nome","tipo","endereco","mapsLink","telefone","horarioSemana","horarioSabado","horarioDomingo","pagamento","instagram","googleReview"]
         .forEach(k => novo.negocio[k] = el("n_" + k).value.trim());
       novo.negocio.logo = logoAtual;
       ["saudacaoIntro","saudacaoChamada","saudacaoNome","saudacaoRodape","atendente","ausencia"].forEach(k => novo.mensagens[k] = el("m_" + k).value);
@@ -1511,7 +1530,8 @@
     }
 
     // ===== Atendimentos (fila de handoff com resumo da IA) =====
-    let atendimentosPend = [];
+    let atendimentosPend = [], atPagina = 1;
+    function atIrPagina(n) { atPagina = n; renderAtendimentos(); const c = el("listaAtendimentos"); if (c) c.scrollIntoView({ block: "start" }); }
     function tempoRel(ms) {
       const s = Math.floor((Date.now() - ms) / 1000);
       if (s < 60) return "agora";
@@ -1531,8 +1551,11 @@
     }
     function renderAtendimentos() {
       const c = el("listaAtendimentos"); if (!c) return;
-      if (!atendimentosPend.length) { c.innerHTML = '<p class="dica">Nenhum cliente aguardando atendimento. 🎉</p>'; return; }
-      c.innerHTML = atendimentosPend.map(a => `
+      if (!atendimentosPend.length) { c.innerHTML = '<p class="dica">Nenhum cliente aguardando atendimento. 🎉</p>'; if (el("atPager")) el("atPager").innerHTML = ""; return; }
+      const POR = 15, total = atendimentosPend.length, totalPags = Math.ceil(total / POR);
+      atPagina = Math.min(Math.max(1, atPagina), totalPags || 1);
+      const ini = (atPagina - 1) * POR;
+      c.innerHTML = atendimentosPend.slice(ini, ini + POR).map(a => `
         <div class="prod" style="align-items:flex-start">
           <div class="semimg" style="background:#fee2e2">🔔</div>
           <div class="pinfo">
@@ -1544,6 +1567,7 @@
             <button class="btn-primary" style="padding:7px 12px;white-space:nowrap" onclick="resolverAtendimento('${a.id}')">✓ Atendido</button>
           </div>
         </div>`).join("");
+      if (el("atPager")) el("atPager").innerHTML = montarPager(atPagina, totalPags, total, "atIrPagina", "aguardando");
     }
     async function resolverAtendimento(id) {
       try { const d = await (await fetch("/api/atendimentos/resolver", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json(); atendimentosPend = d.pendentes || []; }

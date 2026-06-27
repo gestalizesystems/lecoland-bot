@@ -25,6 +25,8 @@ async function processarAudio(from, mediaId, nomeWpp) {
     const { buffer, mimeType } = await wa.baixarMidia(mediaId);
     const texto = await ai.transcreverAudio(buffer.toString("base64"), mimeType);
     if (texto && texto.trim()) {
+      // Eco da transcrição: confirma o que o bot entendeu (visível pra cliente e atendente no chat).
+      try { await wa.enviarTexto(from, `🎤 _Entendi seu áudio:_ "${texto.trim()}"`); } catch (_) {}
       await conversa.processar(from, texto.trim(), nomeWpp);
     } else {
       try { await wa.enviarTexto(from, "Desculpa, não consegui entender o áudio 🙏 Pode me mandar por texto?"); } catch (_) {}
