@@ -84,6 +84,20 @@ function migrar(d) {
     });
     d._mapsEndereco = true; mudou = true;
   }
+  // Catálogo: mantém só os produtos VENDIDOS no último ano (data/codigos-vendidos.json).
+  if (!d._catalogoVendidos) {
+    try {
+      const lista = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "codigos-vendidos.json"), "utf8"));
+      const codigos = new Set(lista.map(String));
+      if (d.catalogo && Array.isArray(d.catalogo.produtos)) {
+        d.catalogo.produtos = d.catalogo.produtos.filter((p) => {
+          const cod = String(p.codigo || "").trim();
+          return !cod || codigos.has(cod); // mantém os sem-código (cadastrados à mão) e os vendidos
+        });
+      }
+      d._catalogoVendidos = true; mudou = true;
+    } catch (_) { /* sem a lista de vendidos — não filtra */ }
+  }
   return mudou;
 }
 
