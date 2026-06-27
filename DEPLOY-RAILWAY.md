@@ -26,9 +26,10 @@ WHATSAPP_VERIFY_TOKEN=...   (o mesmo que está no seu .env)
 ```
 > Não defina `ADMIN_PORT` — o Railway injeta `PORT` automaticamente.
 
-## 3. Gerar a URL pública
-- Em **Settings → Networking → Generate Domain**. Vai sair algo como
-  `https://lecoland-production.up.railway.app` (já com HTTPS).
+## 3. URL pública
+- Em **Settings → Networking → Generate Domain** sai a URL do Railway (com HTTPS).
+- *(Opcional)* **Custom Domain** → use um domínio próprio (ex.: `https://bots.gestalizesystems.com.br`)
+  adicionando um **CNAME** no seu DNS apontando pro destino que o Railway mostrar.
 - Teste abrindo `https://SUA-URL/login` — deve aparecer a tela de login.
 
 ## 4. Configurar o Webhook na Meta
