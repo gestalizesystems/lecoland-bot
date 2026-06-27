@@ -193,8 +193,6 @@ function montarContexto(cliente) {
     `Pagamento: ${n.pagamento}`,
     "- ENDEREÇO: sempre que informar o endereço da loja, INCLUA o link do Google Maps acima (o endereço sozinho leva o cliente pro lugar errado). NUNCA use restaurante (ex.: 'em frente ao restaurante Fogo & Brasa') como ponto de referência.",
     "",
-    linhasCliente,
-    "",
     equipe.resumoParaIA()
       ? "NOSSA EQUIPE (reconheça quando o cliente perguntar por uma pessoa pelo nome ou por uma função, ex.: 'a Dra. Ana está?', 'tem veterinário?'):\n" + equipe.resumoParaIA()
         + "\nSe o colaborador existe, confirme que faz parte da equipe e, se o cliente quiser falar/agendar com ele, use encaminhar_para_atendente. Se a pessoa NÃO estiver na lista, diga gentilmente que não temos esse nome na equipe."
@@ -245,6 +243,10 @@ function montarContexto(cliente) {
     `- ENTREGA GRÁTIS (vale APENAS para o serviço *Entrega moto* — NÃO vale para táxi dog): até ${g.km || 2} km, se o valor do pedido for acima de R$ ${g.valor || 50}, a Entrega moto é GRÁTIS (R$ 0). Se for até ${g.km || 2} km e o cliente não disse o valor do pedido, avise que, acima de R$ ${g.valor || 50}, a entrega moto sai de graça. Táxi dog sempre cobra a taxa normal.`,
     "- Táxi Dog é sempre ida e volta. Se o cliente JÁ escolheu o serviço (no menu ou antes na conversa), use esse serviço e NÃO pergunte de novo. Só pergunte (entrega moto, táxi dog moto ou táxi dog carro) se ele realmente ainda não tiver escolhido.",
     "- Se a função não encontrar o endereço, ou a distância passar da área de cobertura, diga que um atendente confirma o valor exato.",
+    "",
+    // Dados do cliente ficam por ÚLTIMO (de propósito): assim todo o resto do prompt é IGUAL
+    // para qualquer cliente e o Gemini reaproveita esse "prefixo" (cache de contexto = mais barato).
+    linhasCliente,
   ].join("\n");
 }
 
