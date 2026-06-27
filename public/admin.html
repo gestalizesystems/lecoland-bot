@@ -1105,59 +1105,29 @@
     function confirmarLogout(i) { const c = contas[i]; if (c && confirm('Sair da conta "' + c.nome + '"?')) sair(); }
 
     // ===== Dashboard =====
-    function serieDemo(n, base, amp, seed) {
-      const out = []; let v = base, s = (seed || 1) * 7919;
-      for (let i = 0; i < n; i++) { s = (s * 9301 + 49297) % 233280; const r = s / 233280; v += (r - 0.45) * amp; v = Math.max(base * 0.5, v); out.push(Math.round(v)); }
-      return out;
-    }
-    function svgSpark(serie, cor) {
-      const w = 260, h = 44, n = serie.length, min = Math.min(...serie), max = Math.max(...serie), rng = (max - min) || 1;
-      const X = (i) => (i / (n - 1)) * w, Y = (v) => h - 4 - ((v - min) / rng) * (h - 8);
-      let d = ""; serie.forEach((v, i) => { d += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1) + " "; });
-      const id = "g" + Math.random().toString(36).slice(2, 7);
-      return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-        <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cor}" stop-opacity="0.22"/><stop offset="1" stop-color="${cor}" stop-opacity="0"/></linearGradient></defs>
-        <path d="${d}L${w} ${h} L0 ${h} Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round"/></svg>`;
-    }
-    function renderKpis() {
+    async function renderKpis() {
+      let nClientes = 0, npsTotal = 0, npsScore = null;
+      try { const c = await (await fetch("/api/clientes")).json(); nClientes = (c.clientes || []).length; } catch (_) {}
+      try { const n = await (await fetch("/api/nps?dias=0")).json(); npsTotal = n.resumo.total || 0; npsScore = n.resumo.score; } catch (_) {}
+      const nProdutos = ((cfg.catalogo && cfg.catalogo.produtos) || []).length;
       const cards = [
-        { rot: "Atendimentos", cor: "#16a34a", bg: "#dcfce7", ico: "💬", v: "1.248", d: "↑ 18%", up: true },
-        { rot: "Mensagens enviadas", cor: "#2563eb", bg: "#dbeafe", ico: "✈️", v: "7.982", d: "↑ 24%", up: true },
-        { rot: "Respostas automáticas", cor: "#ea580c", bg: "#ffedd5", ico: "🤖", v: "96%", d: "↑ 8%", up: true },
-        { rot: "Transferências p/ humano", cor: "#7c3aed", bg: "#ede9fe", ico: "🎧", v: "53", d: "↓ 12%", up: false },
+        { rot: "Clientes cadastrados", cor: "#2563eb", bg: "#dbeafe", ico: "👥", v: nClientes.toLocaleString("pt-BR") },
+        { rot: "Produtos no catálogo", cor: "#16a34a", bg: "#dcfce7", ico: "📦", v: nProdutos.toLocaleString("pt-BR") },
+        { rot: "Avaliações (NPS)", cor: "#ea580c", bg: "#ffedd5", ico: "⭐", v: npsTotal.toLocaleString("pt-BR") },
+        { rot: "Score NPS", cor: "#7c3aed", bg: "#ede9fe", ico: "📊", v: npsScore == null ? "—" : npsScore },
       ];
-      el("dashKpis").innerHTML = cards.map((c, i) => `
+      el("dashKpis").innerHTML = cards.map(c => `
         <div class="kpi">
           <div class="top"><div class="rotulo" style="color:${c.cor}">${c.rot}</div><div class="ico" style="background:${c.bg}">${c.ico}</div></div>
-          <div class="valor">${c.v} <span class="delta ${c.up ? "up" : "down"}">${c.d}</span></div>
-          <div class="vs">vs período anterior</div>
-          ${svgSpark(serieDemo(24, 40, 18, i + 3), c.cor)}
+          <div class="valor">${c.v}</div>
+          <div class="vs">no total</div>
         </div>`).join("");
     }
     function renderTempoReal() {
-      const dados = [
-        { nome: "Lucas Ferreira", msg: "Gostaria de saber sobre banho e tosa", tag: "bot", t: "agora" },
-        { nome: "Juliana Santos", msg: "Qual o valor da consulta?", tag: "aguard", t: "1 min" },
-        { nome: "Rafael Costa", msg: "Quero agendar uma vacinação", tag: "bot", t: "2 min" },
-        { nome: "Mariana Oliveira", msg: "Vocês fazem entrega?", tag: "humano", t: "3 min" },
-        { nome: "Pedro Almeida", msg: "Qual o horário de funcionamento?", tag: "bot", t: "5 min" },
-      ];
-      const rot = { bot: "Atendido pelo bot", aguard: "Aguardando resposta", humano: "Transferido p/ humano" };
-      el("dashTempoReal").innerHTML = dados.map(d => `
-        <div class="rt"><div class="av">${d.nome[0]}</div>
-          <div class="info"><div class="nome">${d.nome}</div><div class="msg">${d.msg}</div></div>
-          <div class="dir"><span class="tag ${d.tag}">${rot[d.tag]}</span><div class="tempo">${d.t}</div></div></div>`).join("");
+      el("dashTempoReal").innerHTML = '<p class="dica" style="padding:10px 2px">As conversas acontecem direto no WhatsApp — o histórico completo de cada cliente fica lá. 🐾</p>';
     }
     function renderServicos() {
-      const opcoes = [];
-      (cfg.servicos || []).forEach(s => opcoes.push(s.titulo));
-      (cfg.faqRapido || []).forEach(f => opcoes.push(f.titulo));
-      if (cfg.entrega && cfg.entrega.ativo) opcoes.push(cfg.entrega.titulo);
-      const base = [532, 398, 286, 152, 98, 64, 40], pct = ["↑ 15%", "↑ 8%", "↑ 22%", "↓ 5%", "↑ 12%", "↑ 4%", "↑ 2%"];
-      el("dashServicos").innerHTML = opcoes.slice(0, 5).map((t, i) => `
-        <div class="sv"><div class="num">${i + 1}</div>
-          <div class="info"><div class="tit">${esc(t)}</div><div class="sub">${base[i] || 30} solicitações</div></div>
-          <div class="pct" style="color:${(pct[i] || "").includes("↓") ? "#dc2626" : "#16a34a"}">${pct[i] || "↑ 3%"}</div></div>`).join("");
+      el("dashServicos").innerHTML = '<p class="dica" style="padding:10px 2px">As estatísticas de uso vão aparecer aqui conforme os clientes forem usando o bot.</p>';
     }
     async function renderStatus() {
       let st = { gemini: false, ors: false };
@@ -1178,24 +1148,7 @@
         itens.map(i => `<div class="status-item">${i.nome}<span class="est ${i.ok ? "ativo" : "reparo"}"><span class="pt"></span>${i.ok ? "Ativo" : "Aguardando reparo"}</span></div>`).join("");
     }
     function renderGrafico() {
-      const dias = parseInt((el("dashFiltro") && el("dashFiltro").value) || "7", 10);
-      const recebidas = serieDemo(dias, 480, 90, 7);
-      const automaticas = recebidas.map(v => Math.round(v * 0.82));
-      const transferidas = recebidas.map(v => Math.round(v * 0.14));
-      const max = Math.max(...recebidas) * 1.15;
-      const w = 720, h = 250, padL = 36, padB = 26, padT = 8, padR = 8, iw = w - padL - padR, ih = h - padT - padB;
-      const X = (i) => padL + (i / (dias - 1 || 1)) * iw, Y = (v) => padT + ih - (v / max) * ih;
-      const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(" ");
-      let grid = "";
-      for (let g = 0; g <= 4; g++) { const yy = padT + ih - (g / 4) * ih, val = Math.round((g / 4) * max); grid += `<line x1="${padL}" y1="${yy.toFixed(0)}" x2="${w - padR}" y2="${yy.toFixed(0)}" stroke="#f1f5f9"/><text x="${padL - 6}" y="${(yy + 3).toFixed(0)}" text-anchor="end" font-size="10" fill="#94a3b8">${val}</text>`; }
-      const fimDt = window.__dashFim ? new Date(window.__dashFim + "T00:00:00") : new Date();
-      let xl = "", passo = Math.ceil(dias / 7);
-      for (let i = 0; i < dias; i += passo) { const dt = new Date(fimDt); dt.setDate(dt.getDate() - (dias - 1 - i)); const lbl = String(dt.getDate()).padStart(2, "0") + "/" + String(dt.getMonth() + 1).padStart(2, "0"); xl += `<text x="${X(i).toFixed(0)}" y="${h - 6}" text-anchor="middle" font-size="10" fill="#94a3b8">${lbl}</text>`; }
-      el("dashGrafico").innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:260px">${grid}
-        <path d="${path(recebidas)} L${X(dias - 1).toFixed(1)} ${padT + ih} L${padL} ${padT + ih} Z" fill="rgba(22,163,74,.07)"/>
-        <path d="${path(recebidas)}" fill="none" stroke="#16a34a" stroke-width="2.2"/>
-        <path d="${path(automaticas)}" fill="none" stroke="#2563eb" stroke-width="2.2"/>
-        <path d="${path(transferidas)}" fill="none" stroke="#7c3aed" stroke-width="2.2"/>${xl}</svg>`;
+      el("dashGrafico").innerHTML = '<p class="dica" style="padding:48px 2px;text-align:center">📊 O gráfico de movimento vai aparecer aqui conforme o bot for atendendo.</p>';
     }
     async function renderNps() {
       let d = { resumo: { total: 0 } };
