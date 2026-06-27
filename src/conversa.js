@@ -14,7 +14,7 @@ function configurar(fnTexto, fnImagem) {
 }
 
 // URL pública do painel (pra montar o link das fotos do catálogo no WhatsApp).
-const PUBLIC_URL = (process.env.PUBLIC_URL || "https://lecoland-production.up.railway.app").replace(/\/$/, "");
+const PUBLIC_URL = (process.env.PUBLIC_URL || "https://bots.gestalizesystems.com.br").replace(/\/$/, "");
 
 // Envia até 5 produtos achados como foto + nome + preço (formato de catálogo).
 async function enviarProdutos(from, produtos) {
