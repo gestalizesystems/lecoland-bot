@@ -612,6 +612,10 @@
               </select>
               <button class="btn-primary" onclick="abrirProduto()">+ Adicionar produto</button>
             </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-2px 0 12px">
+              <button class="add" id="btnReproc" onclick="reprocessarImagens()">🔄 Otimizar fotos antigas (PNG → JPEG)</button>
+              <span id="reprocStatus" class="dica" style="margin:0"></span>
+            </div>
             <div id="catProdutos"></div>
             <div id="catPager" class="catpager"></div>
           </div>
@@ -1800,6 +1804,45 @@
     async function apiCat(url, body) {
       const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const d = await res.json(); if (!d.ok) throw new Error(d.erro || "falha");
+    }
+    // Converte uma imagem já hospedada (URL same-origin) em JPEG menor, via canvas.
+    function urlParaJpeg(url, max, q) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height; const s = Math.min(1, max / Math.max(w, h));
+          w = Math.round(w * s); h = Math.round(h * s);
+          const c = document.createElement("canvas"); c.width = w; c.height = h;
+          const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", q));
+        };
+        img.onerror = () => reject(new Error("não carregou"));
+        img.src = url + (url.indexOf("?") > -1 ? "&" : "?") + "rp=" + Date.now();
+      });
+    }
+    async function reprocessarImagens() {
+      const alvos = catalogo.produtos.filter(p => p.imagem && p.imagem.indexOf("/uploads/") === 0 && /\.png(\?|$)/i.test(p.imagem));
+      if (!alvos.length) { alert("Nenhuma foto PNG antiga pra otimizar 🎉 As novas já entram como JPEG."); return; }
+      if (!confirm(`Otimizar ${alvos.length} foto(s) PNG → JPEG? Mantenha esta aba aberta até terminar.`)) return;
+      const btn = el("btnReproc"); if (btn) btn.disabled = true;
+      let ok = 0, falhas = 0;
+      for (let i = 0; i < alvos.length; i++) {
+        const p = alvos[i];
+        el("reprocStatus").textContent = `Otimizando ${i + 1}/${alvos.length}...`;
+        try {
+          const antigo = p.imagem;
+          const dataUrl = await urlParaJpeg(antigo, 800, 0.82);
+          const res = await fetch("/api/catalogo/imagem", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl }) });
+          const d = await res.json(); if (!d.ok) throw new Error(d.erro || "upload falhou");
+          p.imagem = d.path;
+          await apiCat("/api/catalogo/produto", { produto: p });
+          try { await fetch("/api/catalogo/imagem/remover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: antigo }) }); } catch (_) {}
+          ok++;
+        } catch (e) { falhas++; console.error("reprocessar", p.id, e); }
+      }
+      el("reprocStatus").textContent = `✅ Pronto: ${ok} otimizada(s)${falhas ? `, ${falhas} falha(s)` : ""}.`;
+      if (btn) btn.disabled = false;
+      renderProdutos();
     }
     async function salvarProdutoServidor(p) { try { await apiCat("/api/catalogo/produto", { produto: p }); } catch (e) { alert("Erro ao salvar produto: " + e.message); } }
     async function removerProdutoServidor(id) { try { await apiCat("/api/catalogo/produto/remover", { id }); } catch (e) { alert("Erro ao excluir: " + e.message); } }

@@ -313,6 +313,22 @@ function iniciarAdmin(porta) {
     }
   });
 
+  // Remove um arquivo de imagem do /uploads (usado no reprocessamento PNG->JPEG).
+  app.post("/api/catalogo/imagem/remover", (req, res) => {
+    try {
+      const p = String((req.body && req.body.path) || "");
+      const base = path.basename(p); // só o nome do arquivo (sem caminho)
+      if (!p.startsWith("/uploads/") || base !== p.slice("/uploads/".length) || !/^[\w.-]+\.(png|jpe?g|webp|gif)$/i.test(base)) {
+        throw new Error("Caminho inválido.");
+      }
+      const full = path.join(UPLOAD_DIR, base);
+      if (fs.existsSync(full)) fs.unlinkSync(full);
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(400).json({ ok: false, erro: e.message });
+    }
+  });
+
   // Atualiza só a taxonomia (grupos/subgrupos/especificações) — preserva os produtos.
   app.post("/api/catalogo/taxonomia", (req, res) => {
     try {
